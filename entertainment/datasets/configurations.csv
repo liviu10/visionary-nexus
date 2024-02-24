@@ -1,0 +1,116 @@
+﻿id,name,related_field
+1,Read,book_statuses
+2,Currently Reading,book_statuses
+3,Want to Read,book_statuses
+4,Science Fiction,book_genres
+5,Historical Fiction,book_genres
+6,Mystery,book_genres
+7,Memoir,book_genres
+8,Dystopian,book_genres
+9,Graphic Novel,book_genres
+10,Biography,book_genres
+11,Fantasy,book_genres
+12,Horror,book_genres
+13,Young Adult,book_genres
+14,Adventure,book_genres
+15,Magical Realism,book_genres
+16,Short Story,book_genres
+17,Fairy Tale,book_genres
+18,Historical,book_genres
+19,Thriller,book_genres
+20,Literary Fiction,book_genres
+21,Romance,book_genres
+22,Contemporary,book_genres
+23,Comedy,book_genres
+24,Western,book_genres
+25,Book,book_types
+26,E-Book,book_types
+27,Audio Book,book_types
+28,Romanian,book_languages
+29,English,book_languages
+30,RON,book_detail_currencies
+31,Played,game_statuses
+32,Want to Play,game_statuses
+33,To be Released,game_statuses
+34,Action,game_genres
+35,Arcade & Rhythm,game_genres
+36,Fighting & Martial Arts,game_genres
+37,First-Person Shooter,game_genres
+38,Hack & Slash,game_genres
+39,Platformer & Runner,game_genres
+40,Third-Person Shooter,game_genres
+41,Adventure,game_genres
+42,Adventure RPG,game_genres
+43,Casual,game_genres
+44,Hidden Object,game_genres
+45,Puzzle,game_genres
+46,Story-Rich,game_genres
+47,Visual Novel,game_genres
+48,Role-Playing,game_genres
+49,Action RPG,game_genres
+50,JRPG,game_genres
+51,Party-Based,game_genres
+52,Rogue-Like,game_genres
+53,Strategy RPG,game_genres
+54,Turn-Based,game_genres
+55,Simulation,game_genres
+56,Building & Automation,game_genres
+57,Dating,game_genres
+58,Farming & Crafting,game_genres
+59,Hobby & Job,game_genres
+60,Life & Immersive,game_genres
+61,Sandbox & Physics,game_genres
+62,Space & Flight,game_genres
+63,Strategy,game_genres
+64,Card & Board,game_genres
+65,City & Settlement,game_genres
+66,Grand & 4X,game_genres
+67,Military,game_genres
+68,Real-Time Strategy,game_genres
+69,Tower Defense,game_genres
+70,Turn-Based Strategy,game_genres
+71,Sports & Racing,game_genres
+72,All Sports,game_genres
+73,Fishing & Hunting,game_genres
+74,Individual Sports,game_genres
+75,Racing,game_genres
+76,Racing Sim,game_genres
+77,Sports Sim,game_genres
+78,Team Sports,game_genres
+79,Horror,game_genres
+80,Mystery & Detective,game_genres
+81,Open World,game_genres
+82,Science Fiction,game_genres
+83,Space,game_genres
+84,Survival,game_genres
+85,RON,game_detail_currencies
+86,EUR,game_detail_currencies
+87,Watched,media_statuses
+88,Want to Watch,media_statuses
+89,To be Launched,media_statuses
+90,Action,media_genres
+91,Adventure,media_genres
+92,Animation,media_genres
+93,Biography,media_genres
+94,Comedy,media_genres
+95,Crime,media_genres
+96,Documentary,media_genres
+97,Drama,media_genres
+98,Family,media_genres
+99,Fantasy,media_genres
+100,Film-Noir,media_genres
+101,History,media_genres
+102,Horror,media_genres
+103,Music,media_genres
+104,Musical,media_genres
+105,Mystery,media_genres
+106,Romance,media_genres
+107,Science Fiction,media_genres
+108,Short,media_genres
+109,Sport,media_genres
+110,Thriller,media_genres
+111,TV Series,media_types
+112,Movie,media_types
+113,Short,media_types
+114,Want to sell,book_statuses
+115,Currently playing,game_statuses
