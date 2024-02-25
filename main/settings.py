@@ -27,7 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-BASE_URL = 'http://127.0.0.1:8001'
+BASE_URL = 'http://127.0.0.1:8000'
 
 # Application definition
 
@@ -39,13 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'import_export',
+    'django_ckeditor_5',
 
     # Applications
     'books',
     'games',
     'movies',
     'music',
-    'entertainment',
     'settings',
 ]
 
@@ -127,9 +127,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# Media files (images, documents, etc.)
-MEDIA_ROOT = BASE_DIR / 'media'
-MEDIA_URL = '/media/'
+# Upload files (images, documents, etc.)
+MEDIA_ROOT = BASE_DIR / 'uploads'
+MEDIA_URL = '/uploads/'
 
 CKEDITOR_5_CONFIGS = {
     'default': {
