@@ -1,5 +1,6 @@
 from django.contrib import admin
 from import_export.admin import ImportExportMixin
+from books.utils.GoogleBooks import GoogleBooks
 from main.admin import BaseAdmin
 from books.forms import *
 from books.import_export import *
@@ -65,10 +66,11 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         'title_and_authors',
         'genre',
         'display_rating',
-        'published_date',
+        'date_added',
+        'date_read',
         'isbn_13',
         'pages',
-        'status'
+        'status',
     )
     list_filter = (
         'book_type',
@@ -76,7 +78,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         'book_genre',
         'book_status',
     )
-    list_per_page = 5
+    list_per_page = 50
     model = Book
     resource_class = BookResource
     search_fields = (
@@ -85,6 +87,12 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         'isbn_13',
         'book_genre__name'
     )
+    actions = [
+        'update_book_type_book',
+        'update_book_type_e_book',
+        'update_book_type_audio',
+        'update_book_description',
+    ]
 
     def display_image(self, obj):
         if obj.image:
@@ -112,7 +120,10 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
     title_and_authors.short_description = 'Authors and title'
 
     def genre(self, obj):
-        return obj.book_genre.name
+        if obj.book_genre:
+            return obj.book_genre.name
+        else:
+            return ''
     genre.short_description = 'Genre'
 
     def display_rating(self, obj):
@@ -130,3 +141,35 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
     def status(self, obj):
         return obj.book_status.name
     status.short_description = 'Status'
+
+    def update_book_type_book(self, request, queryset):
+        book_type_book = BookType.objects.all().filter(name='Book').first()
+        for book in queryset:
+            book.book_type = book_type_book
+            book.save()
+    update_book_type_book.short_description = 'Update selected to book'
+
+    def update_book_type_e_book(self, request, queryset):
+        book_type_e_book = BookType.objects.all().filter(name='E-Book').first()
+        for book in queryset:
+            book.book_type = book_type_e_book
+            book.save()
+    update_book_type_e_book.short_description = 'Update selected to e-book'
+
+    def update_book_type_audio(self, request, queryset):
+        book_type_audio = BookType.objects.all().filter(name='Audio Book').first()
+        for book in queryset:
+            book.book_type = book_type_audio
+            book.save()
+    update_book_type_audio.short_description = 'Update selected to audio book'
+
+    def update_book_description(self, request, queryset):
+        google_books_api = main.settings.GOOGLE_BOOKS_API_ENDPOINT
+        google_books_api_key = main.settings.GOOGLE_BOOKS_API_KEY
+        for book in queryset:
+            description_by_author_and_title = GoogleBooks(book).get_google_book_description()
+            print(f"Google Book: {description_by_author_and_title}")
+            book.description = description_by_author_and_title
+            book.save()
+        self.message_user(request, f'Successfully updated description for selected books.')
+    update_book_description.short_description = 'Update description for selected books'

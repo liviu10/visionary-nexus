@@ -74,8 +74,8 @@ class Book(BaseModel):
         BookGenre,
         on_delete=models.CASCADE,
         related_name='book_genres',
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
         verbose_name="Genre"
     )
     rating = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
@@ -91,6 +91,9 @@ class Book(BaseModel):
         null=False,
         verbose_name="Status"
     )
+    date_added = models.DateField(blank=True, null=True)
+    date_read = models.DateField(blank=True, null=True)
+    goodreads_link = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         ordering = ('id',)
