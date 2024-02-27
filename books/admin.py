@@ -21,11 +21,11 @@ class BookTypeAdmin(ImportExportMixin, BaseAdmin):
 @admin.register(BookLanguage)
 class BookLanguageAdmin(ImportExportMixin, BaseAdmin):
     form = BookLanguageAdminForm
-    list_display = ('id', 'name',)
+    list_display = ('id', 'name', 'code',)
     model = BookLanguage
     ordering = ['id']
     resource_class = BookLanguageResource
-    search_fields = ('name',)
+    search_fields = ('name', 'code',)
 
 
 @admin.register(BookGenre)
@@ -61,7 +61,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
     form = BookAdminForm
     inlines = [BookDetailAdmin]
     list_display = (
-        'display_image',
+        'display_google_image',
         'type',
         'title_and_authors',
         'genre',
@@ -91,18 +91,18 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         'update_book_type_book',
         'update_book_type_e_book',
         'update_book_type_audio',
-        'update_book_description',
+        'update_book_details',
     ]
 
-    def display_image(self, obj):
-        if obj.image:
+    def display_google_image(self, obj):
+        if obj.google_image_link:
             return format_html(
                 '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
-                main.settings.BASE_URL + obj.image.url
+                obj.google_image_link
             )
         else:
             return ''
-    display_image.short_description = 'Image'
+    display_google_image.short_description = 'Image'
 
     def type(self, obj):
         return obj.book_type.name
@@ -163,13 +163,49 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
             book.save()
     update_book_type_audio.short_description = 'Update selected to audio book'
 
-    def update_book_description(self, request, queryset):
-        google_books_api = main.settings.GOOGLE_BOOKS_API_ENDPOINT
-        google_books_api_key = main.settings.GOOGLE_BOOKS_API_KEY
+    def update_book_details(self, request, queryset):
+        field_mapping = {
+            'book_type': {
+                'google_field': 'printType',
+                'processor': lambda x: BookType.objects.filter(name=x.capitalize()).first()
+            },
+            'book_language': {
+                'google_field': 'language',
+                'processor': lambda x: BookLanguage.objects.filter(code=x).first()
+            },
+            'google_image_link': {
+                'google_field': 'imageLinks',
+                'processor': lambda x: x['thumbnail']
+            },
+            'book_genre': {
+                'google_field': 'categories',
+                'processor': lambda x: BookGenre.objects.filter(name=x[0].capitalize()).first()
+            },
+            'published_date': {
+                'google_field': 'publishedDate',
+                'processor': lambda x: x
+            },
+            'description': {
+                'google_field': 'description',
+                'processor': lambda x: x
+            },
+            'page_count': {
+                'google_field': 'pageCount',
+                'processor': lambda x: x
+            },
+        }
+
         for book in queryset:
-            description_by_author_and_title = GoogleBooks(book).get_google_book_description()
-            print(f"Google Book: {description_by_author_and_title}")
-            book.description = description_by_author_and_title
-            book.save()
-        self.message_user(request, f'Successfully updated description for selected books.')
-    update_book_description.short_description = 'Update description for selected books'
+            book_details = GoogleBooks(book).get_book_details()
+            if book_details is not None:
+                for model_field, config in field_mapping.items():
+                    google_field = config['google_field']
+                    processor = config['processor']
+                    value = book_details.get(google_field)
+                    if value is not None:
+                        setattr(book, model_field, processor(value))
+                book.save()
+            else:
+                print(f"Unable to find book details {book.authors} | {book.title}. Saving was skipped!")
+        self.message_user(request, f'Successfully updated details for selected books.')
+    update_book_details.short_description = 'Update details for selected'

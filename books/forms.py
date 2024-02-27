@@ -20,6 +20,7 @@ class BookLanguageAdminForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'code': forms.TextInput(attrs={'style': 'width: 100%;'}),
         }
 
 
@@ -74,6 +75,7 @@ class BookAdminForm(forms.ModelForm):
             'date_added': forms.DateInput(attrs={'type': 'date', 'style': 'width: 100%;'}),
             'date_read': forms.DateInput(attrs={'type': 'date', 'style': 'width: 100%;'}),
             'goodreads_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'google_image_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
         }
 
     def __init__(self, *args, **kwargs):

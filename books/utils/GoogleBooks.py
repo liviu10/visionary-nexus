@@ -1,43 +1,37 @@
 import requests
+import main.settings
 
 
 class GoogleBooks:
-    google_books_api_url = 'https://www.googleapis.com/books/v1/volumes'
-    google_books_api_key = 'AIzaSyAHl2zCwrcshodNuaG1953Vu1i52WkSaaM'
+    google_books_api_url = main.settings.GOOGLE_BOOKS_API_ENDPOINT
+    google_books_api_key = main.settings.GOOGLE_BOOKS_API_KEY
 
     def __init__(self, book_instance):
         self.book_instance = book_instance
 
-    def get_google_book_description(self):
+    def get_book_details(self):
         author = self.book_instance.authors
         title = self.book_instance.title
-        if author and title:
-            search_book_url = f"{self.google_books_api_url}?q=inauthor:{author}+intitle:{title}"
+        published_date = self.book_instance.published_date
+        isbn_13 = self.book_instance.isbn_13
+        search_criteria = f"author {author}, title {title}, published date {published_date} and isbn {isbn_13}"
+
+        if author and title and published_date and isbn_13:
+            query = f"{published_date}+inauthor:{author}+intitle:{title}+isbn:{isbn_13}"
+            search_book_url = f"{self.google_books_api_url}?q={query}"
+
             try:
                 search_book = requests.get(search_book_url)
-                book_data = search_book.json()
-                if 'totalItems' in book_data and book_data['totalItems'] == 0:
-                    print(f"Unable to find details in Google Books by author: {author} and title: {title}")
+                book_details = search_book.json()
+                if book_details['totalItems'] == 0:
+                    print(f"Unable to find book details by {search_criteria}!")
                 else:
-                    google_book_id = book_data['items'][0]['id']
-                    book_details_url = f"{self.google_books_api_url}/{google_book_id}"
-                    try:
-                        book_details = requests.get(book_details_url)
-                        book_details_data = book_details.json()
-                        if 'totalItems' in book_details_data and book_details_data['totalItems'] == 0:
-                            print(f"Unable to find details in Google Books by ID: {google_book_id}, author: {author} and title: {title}")
-                        else:
-                            print(f"Book details data: {book_details_data['volumeInfo']}")
-                            if 'description' in book_details_data['volumeInfo']:
-                                description = book_details_data['volumeInfo']['description']
-                            else:
-                                print(f"Missing description in Google Books for author: {author} and title: {title}")
-                                description = None
-                            return description
-                    except requests.RequestException as e:
-                        print(f"Unable to find details in Google Books by ID: {google_book_id}, author: {author} and title: {title}")
+                    if 'items' in book_details and len(book_details['items']) > 0 and 'volumeInfo' in book_details['items'][0]:
+                        items = book_details['items']
+                        return items[0]['volumeInfo']
+                    else:
+                        print(f"There was a problem in getting the Google Books API volume info: {str(book_details)}!")
             except requests.RequestException as e:
-                print(f"Unable to find details in Google Books by author: {author} and title: {title}")
+                print(f"There was a problem communicating with the Google Books API: {str(e)}!")
         else:
-            print(f"In order to get the google book id you need to specify both author: {author} and title: {title}")
-
+            print(f"In order to search for book details you need to specify: {search_criteria}!")

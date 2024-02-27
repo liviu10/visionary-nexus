@@ -9,12 +9,14 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -185,7 +187,8 @@ CKEDITOR_5_CONFIGS = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-GOOGLE_BOOKS_API_ENDPOINT = 'https://www.googleapis.com/books/v1/volumes'
-GOOGLE_BOOKS_API_KEY = 'AIzaSyAHl2zCwrcshodNuaG1953Vu1i52WkSaaM'
-GOOGLE_BOOKS_CLIENT_ID = '58273157837-7n8t84ht3mrm75ga6i5of2gebtsc0nkt.apps.googleusercontent.com'
-GOOGLE_BOOKS_CLIENT_SECRET = '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'
+# Google books API
+GOOGLE_BOOKS_API_ENDPOINT = str(os.getenv('GOOGLE_BOOKS_API_ENDPOINT'))
+GOOGLE_BOOKS_API_KEY = str(os.getenv('GOOGLE_BOOKS_API_KEY'))
+GOOGLE_BOOKS_CLIENT_ID = str(os.getenv('GOOGLE_BOOKS_CLIENT_ID'))
+GOOGLE_BOOKS_CLIENT_SECRET = str(os.getenv('GOOGLE_BOOKS_CLIENT_SECRET'))

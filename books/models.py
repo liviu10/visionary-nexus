@@ -19,6 +19,7 @@ class BookType(BaseModel):
 
 class BookLanguage(BaseModel):
     name = models.CharField(max_length=255, blank=False, null=False)
+    code = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         verbose_name = "Language"
@@ -94,6 +95,7 @@ class Book(BaseModel):
     date_added = models.DateField(blank=True, null=True)
     date_read = models.DateField(blank=True, null=True)
     goodreads_link = models.CharField(max_length=255, blank=True, null=True)
+    google_image_link = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         ordering = ('id',)
