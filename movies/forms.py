@@ -50,7 +50,7 @@ class MovieAdminForm(forms.ModelForm):
         model = Movie
         fields = '__all__'
         widgets = {
-            'media_type': forms.Select(attrs={'style': 'width: 100%;'}),
+            'movie_type': forms.Select(attrs={'style': 'width: 100%;'}),
             'image': MovieImagePreviewWidget(attrs={'style': 'width: 100%;'}),
             'title': forms.TextInput(attrs={'style': 'width: 100%;'}),
             'original_title': forms.TextInput(attrs={'style': 'width: 100%;'}),
@@ -59,7 +59,7 @@ class MovieAdminForm(forms.ModelForm):
             'launch_date': forms.DateInput(attrs={'type': 'date', 'style': 'width: 100%;'}),
             'description': CKEditor5Widget(attrs={'style': 'width: 100%'}, config_name="extends"),
             'imdb_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
-            'media_status': forms.Select(attrs={'style': 'width: 100%;'}),
+            'movie_status': forms.Select(attrs={'style': 'width: 100%;'}),
         }
 
     def __init__(self, *args, **kwargs):

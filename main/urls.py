@@ -16,13 +16,20 @@ Including another URLconf
 """
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, reverse_lazy
+from django.shortcuts import redirect
 from main import settings
 
 admin.site.site_header = 'Visionary Nexus Application'
 admin.site.site_title = 'Visionary Nexus'
 
+
+def redirect_to_admin(request):
+    return redirect(reverse_lazy('admin:index'))
+
+
 urlpatterns = [
+    path('', redirect_to_admin),
     path('admin/', admin.site.urls),
     path("ckeditor5/", include('django_ckeditor_5.urls'), name="ck_editor_5_upload_file"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
