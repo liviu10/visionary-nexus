@@ -9,13 +9,6 @@ class BookTypeResource(BaseResource):
         model = BookType
 
 
-class BookLanguageResource(BaseResource):
-    class Meta:
-        export_order = BaseResource.Meta.fields + ('name', 'code',)
-        fields = BaseResource.Meta.fields + ('name', 'code',)
-        model = BookLanguage
-
-
 class BookGenreResource(BaseResource):
     class Meta:
         export_order = BaseResource.Meta.fields + ('name',)
@@ -47,6 +40,7 @@ class BookResource(BaseResource):
             'book_status',
             'date_added',
             'date_read',
+            'goodreads_book_id',
             'goodreads_link',
             'google_image_link',
         )
@@ -65,6 +59,7 @@ class BookResource(BaseResource):
             'book_status',
             'date_added',
             'date_read',
+            'goodreads_book_id',
             'goodreads_link',
             'google_image_link',
         )

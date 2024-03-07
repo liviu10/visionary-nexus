@@ -3,7 +3,7 @@ from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
 from main.models import BaseModel
 from main.utils import upload_to
-from settings.models import Currency
+from settings.models import Currency, Language
 
 
 class BookType(BaseModel):
@@ -12,18 +12,6 @@ class BookType(BaseModel):
     class Meta:
         verbose_name = "Type"
         verbose_name_plural = "Types"
-
-    def __str__(self):
-        return f"{self.name}"
-
-
-class BookLanguage(BaseModel):
-    name = models.CharField(max_length=255, blank=False, null=False)
-    code = models.CharField(max_length=255, blank=True, null=True)
-
-    class Meta:
-        verbose_name = "Language"
-        verbose_name_plural = "Languages"
 
     def __str__(self):
         return f"{self.name}"
@@ -56,16 +44,16 @@ class Book(BaseModel):
         BookType,
         on_delete=models.CASCADE,
         related_name='book_types',
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
         verbose_name="Type"
     )
     book_language = models.ForeignKey(
-        BookLanguage,
+        Language,
         on_delete=models.CASCADE,
         related_name='book_languages',
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
         verbose_name="Language"
     )
     authors = models.CharField(max_length=255, blank=False, null=False)
@@ -88,12 +76,13 @@ class Book(BaseModel):
         BookStatus,
         on_delete=models.CASCADE,
         related_name='book_statuses',
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
         verbose_name="Status"
     )
     date_added = models.DateField(blank=True, null=True)
     date_read = models.DateField(blank=True, null=True)
+    goodreads_book_id = models.PositiveIntegerField(default=0, blank=True, null=True)
     goodreads_link = models.CharField(max_length=255, blank=True, null=True)
     google_image_link = models.CharField(max_length=255, blank=True, null=True)
 

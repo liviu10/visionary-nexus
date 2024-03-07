@@ -14,16 +14,6 @@ class BookTypeAdminForm(forms.ModelForm):
         }
 
 
-class BookLanguageAdminForm(forms.ModelForm):
-    class Meta:
-        model = BookLanguage
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
-            'code': forms.TextInput(attrs={'style': 'width: 100%;'}),
-        }
-
-
 class BookGenreAdminForm(forms.ModelForm):
     class Meta:
         model = BookGenre
@@ -74,6 +64,7 @@ class BookAdminForm(forms.ModelForm):
             'book_status': forms.Select(attrs={'style': 'width: 100%;'}),
             'date_added': forms.DateInput(attrs={'type': 'date', 'style': 'width: 100%;'}),
             'date_read': forms.DateInput(attrs={'type': 'date', 'style': 'width: 100%;'}),
+            'goodreads_book_id': forms.TextInput(attrs={'style': 'width: 100%;'}),
             'goodreads_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
             'google_image_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
         }

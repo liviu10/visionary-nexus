@@ -18,16 +18,6 @@ class BookTypeAdmin(ImportExportMixin, BaseAdmin):
     search_fields = ('name',)
 
 
-@admin.register(BookLanguage)
-class BookLanguageAdmin(ImportExportMixin, BaseAdmin):
-    form = BookLanguageAdminForm
-    list_display = ('id', 'name', 'code',)
-    model = BookLanguage
-    ordering = ['id']
-    resource_class = BookLanguageResource
-    search_fields = ('name', 'code',)
-
-
 @admin.register(BookGenre)
 class BookGenreAdmin(ImportExportMixin, BaseAdmin):
     form = BookGenreAdminForm
@@ -88,9 +78,6 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         'book_genre__name'
     )
     actions = [
-        'update_book_type_book',
-        'update_book_type_e_book',
-        'update_book_type_audio',
         'update_book_details',
     ]
 
@@ -105,7 +92,10 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
     display_google_image.short_description = 'Image'
 
     def type(self, obj):
-        return obj.book_type.name
+        if obj.book_genre:
+            return obj.book_type.name
+        else:
+            return ''
     type.short_description = 'Type'
 
     def title_and_authors(self, obj):
@@ -139,29 +129,11 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
     pages.short_description = 'Pages'
 
     def status(self, obj):
-        return obj.book_status.name
+        if obj.book_genre:
+            return obj.book_status.name
+        else:
+            return ''
     status.short_description = 'Status'
-
-    def update_book_type_book(self, request, queryset):
-        book_type_book = BookType.objects.all().filter(name='Book').first()
-        for book in queryset:
-            book.book_type = book_type_book
-            book.save()
-    update_book_type_book.short_description = 'Update selected to book'
-
-    def update_book_type_e_book(self, request, queryset):
-        book_type_e_book = BookType.objects.all().filter(name='E-Book').first()
-        for book in queryset:
-            book.book_type = book_type_e_book
-            book.save()
-    update_book_type_e_book.short_description = 'Update selected to e-book'
-
-    def update_book_type_audio(self, request, queryset):
-        book_type_audio = BookType.objects.all().filter(name='Audio Book').first()
-        for book in queryset:
-            book.book_type = book_type_audio
-            book.save()
-    update_book_type_audio.short_description = 'Update selected to audio book'
 
     def update_book_details(self, request, queryset):
         field_mapping = {
@@ -171,7 +143,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
             },
             'book_language': {
                 'google_field': 'language',
-                'processor': lambda x: BookLanguage.objects.filter(code=x).first()
+                'processor': lambda x: Language.objects.filter(code=x).first()
             },
             'google_image_link': {
                 'google_field': 'imageLinks',
@@ -181,10 +153,10 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
                 'google_field': 'categories',
                 'processor': lambda x: BookGenre.objects.filter(name=x[0].capitalize()).first()
             },
-            'published_date': {
-                'google_field': 'publishedDate',
-                'processor': lambda x: x
-            },
+            # 'published_date': {
+            #     'google_field': 'publishedDate',
+            #     'processor': lambda x: x
+            # },
             'description': {
                 'google_field': 'description',
                 'processor': lambda x: x
@@ -196,7 +168,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         }
 
         for book in queryset:
-            book_details = GoogleBooks(book).get_book_details()
+            book_details = GoogleBooks(book).get_google_book_details_by_author_and_title()
             if book_details is not None:
                 for model_field, config in field_mapping.items():
                     google_field = config['google_field']
@@ -206,6 +178,6 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
                         setattr(book, model_field, processor(value))
                 book.save()
             else:
-                print(f"Unable to find book details {book.authors} | {book.title}. Saving was skipped!")
-        self.message_user(request, f'Successfully updated details for selected books.')
+                print("Saving was skipped!")
+        self.message_user(request, "Successfully updated details for selected books.")
     update_book_details.short_description = 'Update details for selected'

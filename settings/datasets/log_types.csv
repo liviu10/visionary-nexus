@@ -1,0 +1,9 @@
+id,name,description,when
+1,Emergency,System is unusable.,Indicates a severe error that renders the application unusable and requires immediate attention.
+2,Alert,Action must be taken immediately.,"Indicates a situation that requires immediate action, such as when a critical component is not functioning."
+3,Critical,Critical conditions.,Signifies critical errors that need prompt attention to prevent further issues.
+4,Error,Runtime errors that do not require immediate action but should be monitored.,Represents non-critical errors that occur during the execution of the application.
+5,Warning,Exceptional occurrences that are not errors.,Indicates situations that are not necessarily errors but might require attention or monitoring.
+6,Notice,Normal but significant events.,Logs events that are normal but may have significance for monitoring or troubleshooting.
+7,Info,Interesting events or information.,Provides general information about the application's execution for tracking its normal operation.
+8,Debug,Detailed debug information.,"Used for detailed debugging information, typically only enabled in development environments."
