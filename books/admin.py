@@ -1,6 +1,6 @@
 from django.contrib import admin
 from import_export.admin import ImportExportMixin
-from books.utils.GoogleBooks import GoogleBooks
+from books.utils.GoodreadsScrapper import GoodreadsScrapper
 from main.admin import BaseAdmin
 from books.forms import *
 from books.import_export import *
@@ -68,7 +68,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         'book_genre',
         'book_status',
     )
-    list_per_page = 50
+    list_per_page = 5
     model = Book
     resource_class = BookResource
     search_fields = (
@@ -78,14 +78,20 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         'book_genre__name'
     )
     actions = [
-        'update_book_details',
+        'update_goodreads_book_link',
+        'update_details_from_goodreads',
     ]
 
     def display_google_image(self, obj):
-        if obj.google_image_link:
+        if obj.image:
             return format_html(
                 '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
-                obj.google_image_link
+                main.settings.BASE_URL + obj.image.url
+            )
+        elif obj.goodreads_image_link:
+            return format_html(
+                '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
+                obj.goodreads_image_link
             )
         else:
             return ''
@@ -135,49 +141,37 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
             return ''
     status.short_description = 'Status'
 
-    def update_book_details(self, request, queryset):
-        field_mapping = {
-            'book_type': {
-                'google_field': 'printType',
-                'processor': lambda x: BookType.objects.filter(name=x.capitalize()).first()
-            },
-            'book_language': {
-                'google_field': 'language',
-                'processor': lambda x: Language.objects.filter(code=x).first()
-            },
-            'google_image_link': {
-                'google_field': 'imageLinks',
-                'processor': lambda x: x['thumbnail']
-            },
-            'book_genre': {
-                'google_field': 'categories',
-                'processor': lambda x: BookGenre.objects.filter(name=x[0].capitalize()).first()
-            },
-            # 'published_date': {
-            #     'google_field': 'publishedDate',
-            #     'processor': lambda x: x
-            # },
-            'description': {
-                'google_field': 'description',
-                'processor': lambda x: x
-            },
-            'page_count': {
-                'google_field': 'pageCount',
-                'processor': lambda x: x
-            },
-        }
-
+    def update_goodreads_book_link(self, request, queryset):
         for book in queryset:
-            book_details = GoogleBooks(book).get_google_book_details_by_author_and_title()
-            if book_details is not None:
-                for model_field, config in field_mapping.items():
-                    google_field = config['google_field']
-                    processor = config['processor']
-                    value = book_details.get(google_field)
-                    if value is not None:
-                        setattr(book, model_field, processor(value))
-                book.save()
-            else:
-                print("Saving was skipped!")
+            goodreads_link = GoodreadsScrapper(book).get_goodreads_link()
+            book.goodreads_link = goodreads_link
+            book.save()
         self.message_user(request, "Successfully updated details for selected books.")
-    update_book_details.short_description = 'Update details for selected'
+    update_goodreads_book_link.short_description = 'Update Goodreads book link'
+
+    def update_details_from_goodreads(self, request, queryset):
+        for book in queryset:
+            book_details = GoodreadsScrapper(book).get_goodreads_details()
+            if 'language' in book_details:
+                if book.book_language is None:
+                    language_instance = Language.objects.filter(name=book_details['language']).first()
+                    book.book_language = language_instance
+            if 'cover_url' in book_details:
+                if book.goodreads_image_link is None:
+                    book.goodreads_image_link = book_details['cover_url']
+            if 'genre' in book_details:
+                if book.book_genre is None:
+                    genre_instance = BookGenre.objects.filter(name=book_details['genre']).first()
+                book.genre = genre_instance
+            if 'published_date' in book_details:
+                if book.book_published_date is None:
+                    book.published_date = book_details['published_date']
+            if 'description' in book_details:
+                if book.description is None:
+                    book.description = book_details['description']
+            if 'isbn' in book_details:
+                if book.isbn_13 is None:
+                    book.isbn_13 = book_details['isbn']
+            book.save()
+        self.message_user(request, "Successfully updated details for selected books.")
+    update_details_from_goodreads.short_description = 'Update details from Goodreads'

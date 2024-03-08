@@ -40,9 +40,8 @@ class BookResource(BaseResource):
             'book_status',
             'date_added',
             'date_read',
-            'goodreads_book_id',
             'goodreads_link',
-            'google_image_link',
+            'goodreads_image_link',
         )
         fields = BaseResource.Meta.fields + (
             'book_type',
@@ -59,8 +58,7 @@ class BookResource(BaseResource):
             'book_status',
             'date_added',
             'date_read',
-            'goodreads_book_id',
             'goodreads_link',
-            'google_image_link',
+            'goodreads_image_link',
         )
         model = Book
