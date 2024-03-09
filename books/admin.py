@@ -143,35 +143,60 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
 
     def update_goodreads_book_link(self, request, queryset):
         for book in queryset:
-            goodreads_link = GoodreadsScrapper(book).get_goodreads_link()
-            book.goodreads_link = goodreads_link
-            book.save()
+            if book.goodreads_link:
+                print(f"The book {book} already have a goodreads link! Scrapping was skipped!")
+            else:
+                goodreads_link = GoodreadsScrapper(book).get_goodreads_link()
+                book.goodreads_link = goodreads_link
+                book.save()
         self.message_user(request, "Successfully updated details for selected books.")
     update_goodreads_book_link.short_description = 'Update Goodreads book link'
 
     def update_details_from_goodreads(self, request, queryset):
         for book in queryset:
             book_details = GoodreadsScrapper(book).get_goodreads_details()
-            if 'language' in book_details:
-                if book.book_language is None:
-                    language_instance = Language.objects.filter(name=book_details['language']).first()
+
+            # Language
+            if 'language' in book_details and book.book_language is None:
+                language_instance = Language.objects.filter(name=book_details['language']).first()
+                if language_instance:
                     book.book_language = language_instance
-            if 'cover_url' in book_details:
-                if book.goodreads_image_link is None:
-                    book.goodreads_image_link = book_details['cover_url']
-            if 'genre' in book_details:
-                if book.book_genre is None:
-                    genre_instance = BookGenre.objects.filter(name=book_details['genre']).first()
-                book.genre = genre_instance
-            if 'published_date' in book_details:
-                if book.book_published_date is None:
-                    book.published_date = book_details['published_date']
-            if 'description' in book_details:
-                if book.description is None:
-                    book.description = book_details['description']
-            if 'isbn' in book_details:
-                if book.isbn_13 is None:
-                    book.isbn_13 = book_details['isbn']
+            # Authors
+            if 'authors' in book_details and book.authors is None:
+                book.authors = book_details['authors']
+            # Cover URL
+            if 'cover_url' in book_details and book.goodreads_image_link is None:
+                book.goodreads_image_link = book_details['cover_url']
+            # Title
+            if 'title' in book_details and book.title is None:
+                book.title = book_details['title']
+            # Genre
+            if 'genre' in book_details and book.book_genre is None:
+                genre_instance = BookGenre.objects.filter(name=book_details['genre']).first()
+                if genre_instance:
+                    book.genre = genre_instance
+            # Rating
+            if 'ratings' in book_details and book.rating is None:
+                book.rating = book_details['rating']
+            # Published Date
+            if 'published_date' in book_details and book.published_date is None:
+                book.published_date = book_details['published_date']
+            # Description
+            if 'description' in book_details and book.description is None:
+                book.description = book_details['description']
+            # ISBN
+            if 'isbn' in book_details and book.isbn_13 is None:
+                book.isbn_13 = book_details['isbn']
+            # Page count
+            if 'page_count' in book_details and book.page_count is None:
+                book.page_count = book_details['page_count']
+            # Status
+            if 'status' in book_details and book.book_status is None:
+                book_status_instance = BookStatus.objects.filter(name=book_details['status']).first()
+                if book_status_instance:
+                    book.book_status = book_status_instance
             book.save()
+
         self.message_user(request, "Successfully updated details for selected books.")
+
     update_details_from_goodreads.short_description = 'Update details from Goodreads'

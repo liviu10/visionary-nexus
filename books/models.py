@@ -83,6 +83,7 @@ class Book(BaseModel):
     date_added = models.DateField(blank=True, null=True)
     date_read = models.DateField(blank=True, null=True)
     goodreads_link = models.CharField(max_length=255, blank=True, null=True)
+    goodreads_book_id = models.PositiveIntegerField(default=0, blank=True, null=True)
     goodreads_image_link = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
