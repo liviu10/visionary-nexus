@@ -4,7 +4,7 @@ import json
 from bs4 import BeautifulSoup
 
 
-class GoodreadsScrapper:
+class GoodreadsScraper:
     goodreads_base_url = None
     goodreads_bookshelves_url = None
 
@@ -17,7 +17,7 @@ class GoodreadsScrapper:
     def get_goodreads_link(self):
         book_instance = self.book_instance
         if book_instance.goodreads_link:
-            print(f"The book {book_instance} already have a google book link! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a google book link! Scraping was skipped!")
         else:
             page_number = 1
             while True:
@@ -83,7 +83,7 @@ class GoodreadsScrapper:
 
     def _get_book_language(self, book_instance, soup):
         if hasattr(book_instance, 'language') and book_instance.language:
-            print(f"The book {book_instance} already have a language set! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a language set! Scraping was skipped!")
         else:
             book_language_element = soup.find('script', type='application/ld+json')
             if book_language_element:
@@ -106,7 +106,7 @@ class GoodreadsScrapper:
 
     def _get_book_authors(self, book_instance, soup):
         if hasattr(book_instance, 'authors') and book_instance.authors:
-            print(f"The book {book_instance} already have an author! Scrapping was skipped!")
+            print(f"The book {book_instance} already have an author! Scraping was skipped!")
         else:
             book_author_element = soup.find('div', class_='ContributorLink__name').text.strip()
             if book_author_element:
@@ -119,7 +119,7 @@ class GoodreadsScrapper:
         if hasattr(book_instance, 'image') and book_instance.image or \
                 hasattr(book_instance, 'goodreads_image_link') and book_instance.goodreads_image_link or \
                 hasattr(book_instance, 'google_image_link') and book_instance.google_image_link:
-            print(f"The book {book_instance} already have a book cover! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a cover! Scraping was skipped!")
         else:
             book_cover_element = soup.find('div', class_='BookCover__image').find('img')
             if book_cover_element:
@@ -131,7 +131,7 @@ class GoodreadsScrapper:
 
     def _get_book_title(self, book_instance, soup):
         if hasattr(book_instance, 'title') and book_instance.title:
-            print(f"The book {book_instance} already have a title! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a title! Scraping was skipped!")
         else:
             book_title_element = soup.find('div', class_='Text Text__title1').text.strip()
             if book_title_element:
@@ -142,13 +142,13 @@ class GoodreadsScrapper:
 
     def _get_book_genre(self, book_instance, soup):
         if hasattr(book_instance, 'genre') and book_instance.genre:
-            print(f"The book {book_instance} already have a genre! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a genre! Scraping was skipped!")
         else:
             self.book_details['genre'] = None
 
     def _get_book_rating(self, book_instance, soup):
         if hasattr(book_instance, 'rating') and book_instance.rating:
-            print(f"The book {book_instance} already have a rating! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a rating! Scraping was skipped!")
         else:
             book_rating_element = soup.find('div', class_='RatingStatistics__rating').text.strip()
             if book_rating_element:
@@ -159,13 +159,13 @@ class GoodreadsScrapper:
 
     def _get_book_published_date(self, book_instance, soup):
         if hasattr(book_instance, 'published_date') and book_instance.published_date:
-            print(f"The book {book_instance} already have a published date! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a published date! Scraping was skipped!")
         else:
             self.book_details['published_date'] = None
 
     def _get_book_description(self, book_instance, soup):
         if hasattr(book_instance, 'description') and book_instance.description:
-            print(f"The book {book_instance} already have a description! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a description! Scraping was skipped!")
         else:
             book_description_element = soup.find(
                 'div',
@@ -181,7 +181,7 @@ class GoodreadsScrapper:
 
     def _get_book_isbn(self, book_instance, soup):
         if hasattr(book_instance, 'isbn_13') and book_instance.isbn_13:
-            print(f"The book {book_instance} already have a ISBN 13! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a ISBN 13! Scraping was skipped!")
         else:
             book_isbn_element = soup.find('script', type='application/ld+json')
             if book_isbn_element:
@@ -204,7 +204,7 @@ class GoodreadsScrapper:
 
     def _get_book_page_count(self, book_instance, soup):
         if hasattr(book_instance, 'page_count') and book_instance.page_count and book_instance.page_count > 0:
-            print(f"The book {book_instance} already have a page count! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a page count! Scraping was skipped!")
         else:
             book_page_count_element = soup.find('script', type='application/ld+json')
             if book_page_count_element:
@@ -227,6 +227,6 @@ class GoodreadsScrapper:
 
     def _get_book_status(self, book_instance, soup):
         if hasattr(book_instance, 'book_status') and book_instance.book_status:
-            print(f"The book {book_instance} already have a status! Scrapping was skipped!")
+            print(f"The book {book_instance} already have a status! Scraping was skipped!")
         else:
             self.book_details['status'] = None

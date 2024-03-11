@@ -58,7 +58,8 @@ class MovieAdminForm(forms.ModelForm):
             'rating': forms.TextInput(attrs={'style': 'width: 100%;'}),
             'launch_date': forms.DateInput(attrs={'type': 'date', 'style': 'width: 100%;'}),
             'description': CKEditor5Widget(attrs={'style': 'width: 100%'}, config_name="extends"),
-            'imdb_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'movie_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'movie_image_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
             'movie_status': forms.Select(attrs={'style': 'width: 100%;'}),
         }
 

@@ -1,5 +1,6 @@
 from django.contrib import admin
 from import_export.admin import ImportExportMixin
+from games.utils.SteamScraper import SteamScraper
 from main.admin import BaseAdmin
 from games.forms import *
 from games.import_export import *
@@ -54,12 +55,20 @@ class GameAdmin(ImportExportMixin, BaseAdmin):
         'title',
         'game_genre__name'
     )
+    actions = [
+        'update_details_from_steam',
+    ]
 
     def display_image(self, obj):
         if obj.image:
             return format_html(
                 '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
                 main.settings.BASE_URL + obj.image.url
+            )
+        elif obj.game_image_link:
+            return format_html(
+                '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
+                obj.game_image_link
             )
         else:
             return ''
@@ -87,3 +96,10 @@ class GameAdmin(ImportExportMixin, BaseAdmin):
     def status(self, obj):
         return obj.game_status.name
     status.short_description = 'Status'
+
+    def update_details_from_steam(self, request, queryset):
+        for game in queryset:
+            game_details = SteamScraper(game).get_game_details()
+            game.save()
+        self.message_user(request, "Successfully updated details for selected games.")
+    update_details_from_steam.short_description = 'Update details from Steam'

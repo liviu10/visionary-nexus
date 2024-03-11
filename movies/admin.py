@@ -1,5 +1,6 @@
 from django.contrib import admin
 from import_export.admin import ImportExportMixin
+from movies.utils.IMDBScraper import IMDBScraper
 from main.admin import BaseAdmin
 from movies.forms import *
 from movies.import_export import *
@@ -55,7 +56,7 @@ class MovieAdmin(ImportExportMixin, BaseAdmin):
         'title_and_genres',
         'display_rating',
         'launch_date',
-        'display_imdb_link',
+        'display_movie_link',
         'status'
     )
     list_filter = ('movie_type', 'movie_genre', 'movie_status',)
@@ -67,6 +68,9 @@ class MovieAdmin(ImportExportMixin, BaseAdmin):
         'original_title',
         'movie_genre__name'
     )
+    actions = [
+        'update_details_from_imdb',
+    ]
 
     def type(self, obj):
         return obj.movie_type.name
@@ -77,6 +81,11 @@ class MovieAdmin(ImportExportMixin, BaseAdmin):
             return format_html(
                 '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
                 main.settings.BASE_URL + obj.image.url
+            )
+        elif obj.game_image_link:
+            return format_html(
+                '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
+                obj.movie_image_link
             )
         else:
             return ''
@@ -101,7 +110,7 @@ class MovieAdmin(ImportExportMixin, BaseAdmin):
         )
     display_rating.short_description = 'Rating'
 
-    def display_imdb_link(self, obj):
+    def display_movie_link(self, obj):
         if obj.imdb_link:
             return format_html(
                 '<a href="{}" target="_blank">{}</a>',
@@ -109,8 +118,15 @@ class MovieAdmin(ImportExportMixin, BaseAdmin):
             )
         else:
             return obj.title
-    display_imdb_link.short_description = 'IMDB Link'
+    display_movie_link.short_description = 'IMDB Link'
 
     def status(self, obj):
         return obj.movie_status.name
     status.short_description = 'Status'
+
+    def update_details_from_imdb(self, request, queryset):
+        for movie in queryset:
+            movie_details = IMDBScraper(movie).get_movie_details()
+            movie.save()
+        self.message_user(request, "Successfully updated details for selected movies.")
+    update_details_from_imdb.short_description = 'Update details from IMDB'

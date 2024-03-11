@@ -1,6 +1,6 @@
 from django.contrib import admin
 from import_export.admin import ImportExportMixin
-from books.utils.GoodreadsScrapper import GoodreadsScrapper
+from books.utils.GoodreadsScraper import GoodreadsScraper
 from main.admin import BaseAdmin
 from books.forms import *
 from books.import_export import *
@@ -51,7 +51,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
     form = BookAdminForm
     inlines = [BookDetailAdmin]
     list_display = (
-        'display_google_image',
+        'display_image',
         'type',
         'title_and_authors',
         'genre',
@@ -82,7 +82,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         'update_details_from_goodreads',
     ]
 
-    def display_google_image(self, obj):
+    def display_image(self, obj):
         if obj.image:
             return format_html(
                 '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
@@ -95,7 +95,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
             )
         else:
             return ''
-    display_google_image.short_description = 'Image'
+    display_image.short_description = 'Image'
 
     def type(self, obj):
         if obj.book_genre:
@@ -144,9 +144,9 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
     def update_goodreads_book_link(self, request, queryset):
         for book in queryset:
             if book.goodreads_link:
-                print(f"The book {book} already have a goodreads link! Scrapping was skipped!")
+                print(f"The book {book} already have a goodreads link! Scraping was skipped!")
             else:
-                goodreads_link = GoodreadsScrapper(book).get_goodreads_link()
+                goodreads_link = GoodreadsScraper(book).get_goodreads_link()
                 book.goodreads_link = goodreads_link
                 book.save()
         self.message_user(request, "Successfully updated details for selected books.")
@@ -154,7 +154,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
 
     def update_details_from_goodreads(self, request, queryset):
         for book in queryset:
-            book_details = GoodreadsScrapper(book).get_goodreads_details()
+            book_details = GoodreadsScraper(book).get_goodreads_details()
 
             # Language
             if 'language' in book_details and book.book_language is None:
@@ -196,7 +196,5 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
                 if book_status_instance:
                     book.book_status = book_status_instance
             book.save()
-
         self.message_user(request, "Successfully updated details for selected books.")
-
     update_details_from_goodreads.short_description = 'Update details from Goodreads'

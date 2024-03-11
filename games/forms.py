@@ -48,6 +48,8 @@ class GameAdminForm(forms.ModelForm):
             'released_date': forms.DateInput(attrs={'type': 'date', 'style': 'width: 100%;'}),
             'description': CKEditor5Widget(attrs={'style': 'width: 100%'}, config_name="extends"),
             'game_status': forms.Select(attrs={'style': 'width: 100%;'}),
+            'game_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
+            'game_image_link': forms.TextInput(attrs={'style': 'width: 100%;'}),
         }
 
     def __init__(self, *args, **kwargs):

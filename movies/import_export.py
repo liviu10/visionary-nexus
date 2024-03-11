@@ -34,7 +34,8 @@ class MovieResource(BaseResource):
             'rating',
             'launch_date',
             'description',
-            'imdb_link',
+            'movie_link',
+            'movie_image_link',
             'movie_status',
         )
         fields = BaseResource.Meta.fields + (
@@ -46,7 +47,8 @@ class MovieResource(BaseResource):
             'rating',
             'launch_date',
             'description',
-            'imdb_link',
+            'movie_link',
+            'movie_image_link',
             'movie_status',
         )
         model = Movie

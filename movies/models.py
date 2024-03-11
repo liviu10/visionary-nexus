@@ -61,7 +61,8 @@ class Movie(BaseModel):
     rating = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
     launch_date = models.DateField(blank=True, null=True)
     description = CKEditor5Field('Description', config_name='extends', blank=True, null=True)
-    imdb_link = models.CharField(max_length=255, blank=True, null=True)
+    movie_link = models.CharField(max_length=255, blank=True, null=True)
+    movie_image_link = models.CharField(max_length=255, blank=True, null=True)
     movie_status = models.ForeignKey(
         MovieStatus,
         on_delete=models.CASCADE,

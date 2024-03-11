@@ -26,6 +26,8 @@ class GameResource(BaseResource):
             'released_date',
             'description',
             'game_status',
+            'game_link',
+            'game_image_link',
         )
         fields = BaseResource.Meta.fields + (
             'image',
@@ -35,5 +37,7 @@ class GameResource(BaseResource):
             'released_date',
             'description',
             'game_status',
+            'game_link',
+            'game_image_link',
         )
         model = Game

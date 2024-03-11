@@ -39,7 +39,12 @@ class Game(BaseModel):
         null=False,
         verbose_name="Genre"
     )
-    rating = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
+    rating = models.FloatField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+        blank=True,
+        null=True
+    )
     released_date = models.DateField(blank=True, null=True)
     description = CKEditor5Field('Description', config_name='extends', blank=True, null=True)
     game_status = models.ForeignKey(
@@ -50,6 +55,8 @@ class Game(BaseModel):
         null=False,
         verbose_name="Status"
     )
+    game_link = models.CharField(max_length=255, blank=True, null=True)
+    game_image_link = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         verbose_name = "Game"
