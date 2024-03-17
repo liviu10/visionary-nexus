@@ -75,6 +75,7 @@ class MovieAdmin(ImportExportMixin, BaseAdmin):
     def type(self, obj):
         return obj.movie_type.name
     type.short_description = 'Type'
+    type.admin_order_field = 'movie_type__name'
 
     def display_image(self, obj):
         if obj.image:
@@ -82,7 +83,7 @@ class MovieAdmin(ImportExportMixin, BaseAdmin):
                 '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
                 main.settings.BASE_URL + obj.image.url
             )
-        elif obj.game_image_link:
+        elif obj.movie_image_link:
             return format_html(
                 '<img src="{}" style="max-height: 150px; max-width: 150px;" />',
                 obj.movie_image_link
@@ -101,6 +102,7 @@ class MovieAdmin(ImportExportMixin, BaseAdmin):
             edit_url, f"{obj.title} | {obj.movie_genre.name}"
         )
     title_and_genres.short_description = 'Title and Genre'
+    title_and_genres.admin_order_field = 'title'
 
     def display_rating(self, obj):
         rating_stars = '⭐' * int(obj.rating)
@@ -109,20 +111,23 @@ class MovieAdmin(ImportExportMixin, BaseAdmin):
             obj.rating, rating_stars, obj.rating
         )
     display_rating.short_description = 'Rating'
+    display_rating.admin_order_field = 'rating'
 
     def display_movie_link(self, obj):
-        if obj.imdb_link:
+        if obj.movie_link:
             return format_html(
                 '<a href="{}" target="_blank">{}</a>',
-                obj.imdb_link, obj.title
+                obj.movie_link, obj.title
             )
         else:
             return obj.title
     display_movie_link.short_description = 'IMDB Link'
+    display_movie_link.admin_order_field = 'title'
 
     def status(self, obj):
         return obj.movie_status.name
     status.short_description = 'Status'
+    status.admin_order_field = 'movie_status__name'
 
     def update_details_from_imdb(self, request, queryset):
         for movie in queryset:

@@ -13,8 +13,8 @@ class IMDBScraper:
 
     def get_movie_details(self):
         movie_instance = self.movie_instance
-        if movie_instance.game_link:
-            response = requests.get(movie_instance.game_link)
+        if movie_instance.movie_link:
+            response = requests.get(movie_instance.movie_link)
             soup = BeautifulSoup(response.text, 'html.parser')
 
             # Get movie image:
@@ -32,8 +32,8 @@ class IMDBScraper:
             return self.movie_details
 
     def _get_movie_image(self, movie_instance, soup):
-        if hasattr(movie_instance, 'image') and movie_instance.image and \
-                hasattr(movie_instance, 'cover_url') and movie_instance.cover_url:
+        if hasattr(movie_instance, 'image') and movie_instance.image or \
+                hasattr(movie_instance, 'movie_image_link') and movie_instance.movie_image_link:
             print(f"The movie {movie_instance} already have a cover! Scraping was skipped!")
         else:
             self.movie_details['cover_url'] = None

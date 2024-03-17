@@ -167,17 +167,18 @@ class GoodreadsScraper:
         if hasattr(book_instance, 'description') and book_instance.description:
             print(f"The book {book_instance} already have a description! Scraping was skipped!")
         else:
-            book_description_element = soup.find(
-                'div',
-                class_='DetailsLayoutRightParagraph__widthConstrained'
-            ).text.strip()
+            book_description_element = soup.find('div', class_='DetailsLayoutRightParagraph__widthConstrained')
             if book_description_element:
-                book_description_element = (f"<p><span style=\"color:hsl(0, 0%, 0%);\">"
-                                            f"{book_description_element}</span></p>")
-                self.book_details['description'] = book_description_element
-                print(f"Book description: {book_description_element}")
+                book_description_text = book_description_element.text.strip()
+                if book_description_text:
+                    book_description_element = (f"<p><span style=\"color:hsl(0, 0%, 0%);\">"
+                                                f"{book_description_text}</span></p>")
+                    self.book_details['description'] = book_description_element
+                    print(f"Book description: {book_description_element}")
+                else:
+                    print("Found book description element, but it's empty.")
             else:
-                print(f"Could not find the book description element on the page.")
+                print("Could not find the book description element on the page.")
 
     def _get_book_isbn(self, book_instance, soup):
         if hasattr(book_instance, 'isbn_13') and book_instance.isbn_13:

@@ -103,6 +103,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         else:
             return ''
     type.short_description = 'Type'
+    type.admin_order_field = 'book_type__name'
 
     def title_and_authors(self, obj):
         edit_url = reverse(
@@ -114,6 +115,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
             edit_url, f"{obj.authors} | {obj.title}"
         )
     title_and_authors.short_description = 'Authors and title'
+    title_and_authors.admin_order_field = 'title'
 
     def genre(self, obj):
         if obj.book_genre:
@@ -121,6 +123,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         else:
             return ''
     genre.short_description = 'Genre'
+    genre.admin_order_field = 'book_genre__name'
 
     def display_rating(self, obj):
         rating_stars = '⭐' * int(obj.rating)
@@ -129,10 +132,12 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
             obj.rating, rating_stars, obj.rating
         )
     display_rating.short_description = 'Rating'
+    display_rating.admin_order_field = 'rating'
 
     def pages(self, obj):
         return obj.page_count
     pages.short_description = 'Pages'
+    pages.admin_order_field = 'pages'
 
     def status(self, obj):
         if obj.book_genre:
@@ -140,6 +145,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
         else:
             return ''
     status.short_description = 'Status'
+    status.admin_order_field = 'book_status__name'
 
     def update_goodreads_book_link(self, request, queryset):
         for book in queryset:
