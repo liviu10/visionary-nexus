@@ -98,7 +98,7 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
     display_image.short_description = 'Image'
 
     def type(self, obj):
-        if obj.book_genre:
+        if obj.book_type:
             return obj.book_type.name
         else:
             return ''
