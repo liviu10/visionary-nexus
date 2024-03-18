@@ -5,6 +5,7 @@ from main.admin import BaseAdmin
 from books.forms import *
 from books.import_export import *
 from django.utils.html import format_html
+from django.utils import timezone
 import main.settings
 
 
@@ -146,6 +147,11 @@ class BookAdmin(ImportExportMixin, BaseAdmin):
             return ''
     status.short_description = 'Status'
     status.admin_order_field = 'book_status__name'
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.date_added = timezone.now().date()
+        super().save_model(request, obj, form, change)
 
     def update_goodreads_book_link(self, request, queryset):
         for book in queryset:

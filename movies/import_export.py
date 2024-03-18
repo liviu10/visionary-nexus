@@ -1,4 +1,6 @@
 from main.import_export import BaseResource
+from import_export import resources, fields
+from import_export.widgets import ForeignKeyWidget
 from movies.models import *
 
 
@@ -51,4 +53,5 @@ class MovieResource(BaseResource):
             'movie_image_link',
             'movie_status',
         )
+        import_id_fields = ['id',]
         model = Movie
