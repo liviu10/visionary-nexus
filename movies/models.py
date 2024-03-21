@@ -1,41 +1,26 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
-from main.models import BaseModel
-from main.utils import upload_to
+from main.models import *
+from settings.models import *
 
 
-class MovieType(BaseModel):
-    name = models.CharField(max_length=255, blank=False, null=False)
-
+class MovieType(BaseModel, SettingModel):
     class Meta:
         verbose_name = "Type"
         verbose_name_plural = "Types"
 
-    def __str__(self):
-        return f"{self.name}"
 
-
-class MovieGenre(BaseModel):
-    name = models.CharField(max_length=255, blank=False, null=False)
-
+class MovieGenre(BaseModel, SettingModel):
     class Meta:
         verbose_name = "Genre"
         verbose_name_plural = "Genres"
 
-    def __str__(self):
-        return f"{self.name}"
 
-
-class MovieStatus(BaseModel):
-    name = models.CharField(max_length=255, blank=False, null=False)
-
+class MovieStatus(BaseModel, SettingModel):
     class Meta:
         verbose_name = "Status"
         verbose_name_plural = "Statuses"
-
-    def __str__(self):
-        return f"{self.name}"
 
 
 class Movie(BaseModel):
@@ -47,7 +32,6 @@ class Movie(BaseModel):
         null=False,
         verbose_name="Type"
     )
-    image = models.ImageField(upload_to=upload_to, blank=True, null=True)
     title = models.CharField(max_length=255, blank=False, null=False)
     original_title = models.CharField(max_length=255, blank=False, null=False)
     movie_genre = models.ForeignKey(
@@ -73,6 +57,10 @@ class Movie(BaseModel):
     )
 
     class Meta:
+        indexes = [
+            models.Index(fields=["movie_type"], name="movie_type_idx"),
+            models.Index(fields=["movie_genre"], name="movie_genre_idx"),
+        ]
         verbose_name = "Movie"
         verbose_name_plural = "Movies"
 
@@ -91,5 +79,8 @@ class MovieDetail(BaseModel):
     download_link = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
+        indexes = [
+            models.Index(fields=["movie"], name="movie_idx"),
+        ]
         verbose_name = "Movie detail"
         verbose_name_plural = "Movie details"

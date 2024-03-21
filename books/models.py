@@ -1,42 +1,26 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
-from main.models import BaseModel
-from main.utils import upload_to
-from settings.models import Currency, Language
+from main.models import *
+from settings.models import *
 
 
-class BookType(BaseModel):
-    name = models.CharField(max_length=255, blank=False, null=False)
-
+class BookType(BaseModel, SettingModel):
     class Meta:
         verbose_name = "Type"
         verbose_name_plural = "Types"
 
-    def __str__(self):
-        return f"{self.name}"
 
-
-class BookGenre(BaseModel):
-    name = models.CharField(max_length=255, blank=False, null=False)
-
+class BookGenre(BaseModel, SettingModel):
     class Meta:
         verbose_name = "Genre"
         verbose_name_plural = "Genres"
 
-    def __str__(self):
-        return f"{self.name}"
 
-
-class BookStatus(BaseModel):
-    name = models.CharField(max_length=255, blank=False, null=False)
-
+class BookStatus(BaseModel, SettingModel):
     class Meta:
         verbose_name = "Status"
         verbose_name_plural = "Statuses"
-
-    def __str__(self):
-        return f"{self.name}"
 
 
 class Book(BaseModel):
@@ -57,7 +41,6 @@ class Book(BaseModel):
         verbose_name="Language"
     )
     authors = models.CharField(max_length=255, blank=False, null=False)
-    image = models.ImageField(upload_to=upload_to, blank=True, null=True)
     title = models.CharField(max_length=255, blank=False, null=False)
     book_genre = models.ForeignKey(
         BookGenre,
@@ -87,17 +70,17 @@ class Book(BaseModel):
     goodreads_image_link = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        ordering = ('id',)
+        indexes = [
+            models.Index(fields=["book_type"], name="book_type_idx"),
+            models.Index(fields=["book_language"], name="book_language_idx"),
+            models.Index(fields=["book_genre"], name="book_genre_idx"),
+            models.Index(fields=["book_status"], name="book_status_idx"),
+        ]
         verbose_name = "Book"
         verbose_name_plural = "Books"
 
     def __str__(self):
         return f"Authors: {self.authors} | Title: {self.title}"
-
-    def delete(self, *args, **kwargs):
-        if self.image:
-            self.image.storage.delete(self.image.name)
-        super().delete(*args, **kwargs)
 
 
 class BookDetail(BaseModel):
@@ -121,5 +104,9 @@ class BookDetail(BaseModel):
     )
 
     class Meta:
+        indexes = [
+            models.Index(fields=["book"], name="book_idx"),
+            models.Index(fields=["book_currency"], name="book_currency_idx"),
+        ]
         verbose_name = "Book detail"
         verbose_name_plural = "Book details"
