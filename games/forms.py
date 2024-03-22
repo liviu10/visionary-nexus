@@ -1,26 +1,19 @@
 from django import forms
 from django_ckeditor_5.widgets import CKEditor5Widget
-from games.models import *
 from django.utils.safestring import mark_safe
 from django.urls import reverse
+from main.admin import BaseSettingAdminForm
+from games.models import *
 
 
 class GameGenreAdminForm(forms.ModelForm):
-    class Meta:
+    class Meta(BaseSettingAdminForm.Meta):
         model = GameGenre
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
-        }
 
 
 class GameStatusAdminForm(forms.ModelForm):
-    class Meta:
+    class Meta(BaseSettingAdminForm.Meta):
         model = GameStatus
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
-        }
 
 
 class GameImagePreviewWidget(forms.FileInput):

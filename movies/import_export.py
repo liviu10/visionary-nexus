@@ -1,6 +1,4 @@
-from main.import_export import BaseResource
-from import_export import resources, fields
-from import_export.widgets import ForeignKeyWidget
+from main.admin import BaseResource
 from movies.models import *
 
 

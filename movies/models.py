@@ -1,23 +1,22 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
 from main.models import *
 from settings.models import *
 
 
-class MovieType(BaseModel, SettingModel):
+class MovieType(BaseModel, BaseSettingModel):
     class Meta:
         verbose_name = "Type"
         verbose_name_plural = "Types"
 
 
-class MovieGenre(BaseModel, SettingModel):
+class MovieGenre(BaseModel, BaseSettingModel):
     class Meta:
         verbose_name = "Genre"
         verbose_name_plural = "Genres"
 
 
-class MovieStatus(BaseModel, SettingModel):
+class MovieStatus(BaseModel, BaseSettingModel):
     class Meta:
         verbose_name = "Status"
         verbose_name_plural = "Statuses"

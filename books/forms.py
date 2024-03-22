@@ -1,35 +1,24 @@
 from django import forms
 from django_ckeditor_5.widgets import CKEditor5Widget
-from books.models import *
 from django.utils.safestring import mark_safe
 from django.urls import reverse
+from main.admin import BaseSettingAdminForm
+from books.models import *
 
 
 class BookTypeAdminForm(forms.ModelForm):
-    class Meta:
+    class Meta(BaseSettingAdminForm.Meta):
         model = BookType
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
-        }
 
 
 class BookGenreAdminForm(forms.ModelForm):
-    class Meta:
+    class Meta(BaseSettingAdminForm.Meta):
         model = BookGenre
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
-        }
 
 
 class BookStatusAdminForm(forms.ModelForm):
-    class Meta:
+    class Meta(BaseSettingAdminForm.Meta):
         model = BookStatus
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
-        }
 
 
 class BookImagePreviewWidget(forms.FileInput):

@@ -1,35 +1,24 @@
 from django import forms
 from django_ckeditor_5.widgets import CKEditor5Widget
-from movies.models import *
 from django.utils.safestring import mark_safe
 from django.urls import reverse
+from main.admin import BaseSettingAdminForm
+from movies.models import *
 
 
 class MovieTypeAdminForm(forms.ModelForm):
-    class Meta:
+    class Meta(BaseSettingAdminForm.Meta):
         model = MovieType
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
-        }
 
 
 class MovieGenreAdminForm(forms.ModelForm):
-    class Meta:
+    class Meta(BaseSettingAdminForm.Meta):
         model = MovieGenre
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
-        }
 
 
 class MovieStatusAdminForm(forms.ModelForm):
-    class Meta:
+    class Meta(BaseSettingAdminForm.Meta):
         model = MovieStatus
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'style': 'width: 100%;'}),
-        }
 
 
 class MovieImagePreviewWidget(forms.FileInput):

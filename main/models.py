@@ -29,9 +29,8 @@ class BaseModel(models.Model):
         super().delete(*args, **kwargs)
 
 
-class SettingModel(models.Model):
+class BaseSettingModel(models.Model):
     name = models.CharField(
-        min_length=3,
         max_length=255,
         blank=False,
         null=False

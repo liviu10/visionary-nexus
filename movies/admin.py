@@ -1,7 +1,7 @@
 from django.contrib import admin
 from import_export.admin import ImportExportMixin
 from movies.utils.IMDBScraper import IMDBScraper
-from main.admin import BaseAdmin
+from main.admin import BaseAdmin, BaseSettingAdmin
 from movies.forms import *
 from movies.import_export import *
 from django.utils.html import format_html
@@ -11,31 +11,31 @@ import main.settings
 @admin.register(MovieType)
 class MovieTypeAdmin(ImportExportMixin, BaseAdmin):
     form = MovieTypeAdminForm
-    list_display = ('id', 'name',)
+    list_display = BaseSettingAdmin.list_display
     model = MovieType
-    ordering = ['id']
+    ordering = BaseSettingAdmin.ordering
     resource_class = MovieTypeResource
-    search_fields = ('name',)
+    search_fields = BaseSettingAdmin.search_fields
 
 
 @admin.register(MovieGenre)
 class MovieGenreAdmin(ImportExportMixin, BaseAdmin):
     form = MovieGenreAdminForm
-    list_display = ('id', 'name',)
+    list_display = BaseSettingAdmin.list_display
     model = MovieGenre
-    ordering = ['id']
+    ordering = BaseSettingAdmin.ordering
     resource_class = MovieGenreResource
-    search_fields = ('name',)
+    search_fields = BaseSettingAdmin.search_fields
 
 
 @admin.register(MovieStatus)
 class MovieStatusAdmin(ImportExportMixin, BaseAdmin):
     form = MovieStatusAdminForm
-    list_display = ('id', 'name',)
+    list_display = BaseSettingAdmin.list_display
     model = MovieStatus
-    ordering = ['id']
+    ordering = BaseSettingAdmin.ordering
     resource_class = MovieStatusResource
-    search_fields = ('name',)
+    search_fields = BaseSettingAdmin.search_fields
 
 
 class MovieDetailAdmin(admin.TabularInline):

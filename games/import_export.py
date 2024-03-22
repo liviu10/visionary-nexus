@@ -1,4 +1,4 @@
-from main.import_export import BaseResource
+from main.admin import BaseResource
 from games.models import *
 
 

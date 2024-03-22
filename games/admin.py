@@ -1,7 +1,7 @@
 from django.contrib import admin
 from import_export.admin import ImportExportMixin
 from games.utils.SteamScraper import SteamScraper
-from main.admin import BaseAdmin
+from main.admin import BaseAdmin, BaseSettingAdmin
 from games.forms import *
 from games.import_export import *
 from django.utils.html import format_html
@@ -11,21 +11,21 @@ import main.settings
 @admin.register(GameGenre)
 class GameGenreAdmin(ImportExportMixin, BaseAdmin):
     form = GameGenreAdminForm
-    list_display = ('id', 'name',)
+    list_display = BaseSettingAdmin.list_display
     model = GameGenre
-    ordering = ['id']
+    ordering = BaseSettingAdmin.ordering
     resource_class = GameGenreResource
-    search_fields = ('name',)
+    search_fields = BaseSettingAdmin.search_fields
 
 
 @admin.register(GameStatus)
 class GameStatusAdmin(ImportExportMixin, BaseAdmin):
     form = GameStatusAdminForm
-    list_display = ('id', 'name',)
+    list_display = BaseSettingAdmin.list_display
     model = GameStatus
-    ordering = ['id']
+    ordering = BaseSettingAdmin.ordering
     resource_class = GameStatusResource
-    search_fields = ('name',)
+    search_fields = BaseSettingAdmin.search_fields
 
 
 class GameDetailAdmin(admin.TabularInline):

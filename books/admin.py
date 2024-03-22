@@ -1,7 +1,7 @@
 from django.contrib import admin
 from import_export.admin import ImportExportMixin
 from books.utils.GoodreadsScraper import GoodreadsScraper
-from main.admin import BaseAdmin
+from main.admin import BaseAdmin, BaseSettingAdmin
 from books.forms import *
 from books.import_export import *
 from django.utils.html import format_html
@@ -12,31 +12,31 @@ import main.settings
 @admin.register(BookType)
 class BookTypeAdmin(ImportExportMixin, BaseAdmin):
     form = BookTypeAdminForm
-    list_display = ('id', 'name',)
+    list_display = BaseSettingAdmin.list_display
     model = BookType
-    ordering = ['id']
+    ordering = BaseSettingAdmin.ordering
     resource_class = BookTypeResource
-    search_fields = ('name',)
+    search_fields = BaseSettingAdmin.search_fields
 
 
 @admin.register(BookGenre)
 class BookGenreAdmin(ImportExportMixin, BaseAdmin):
     form = BookGenreAdminForm
-    list_display = ('id', 'name',)
+    list_display = BaseSettingAdmin.list_display
     model = BookGenre
-    ordering = ['id']
+    ordering = BaseSettingAdmin.ordering
     resource_class = BookGenreResource
-    search_fields = ('name',)
+    search_fields = BaseSettingAdmin.search_fields
 
 
 @admin.register(BookStatus)
 class BookStatusAdmin(ImportExportMixin, BaseAdmin):
     form = BookStatusAdminForm
-    list_display = ('id', 'name',)
+    list_display = BaseSettingAdmin.list_display
     model = BookStatus
-    ordering = ['id']
+    ordering = BaseSettingAdmin.ordering
     resource_class = BookStatusResource
-    search_fields = ('name',)
+    search_fields = BaseSettingAdmin.search_fields
 
 
 class BookDetailAdmin(admin.TabularInline):
