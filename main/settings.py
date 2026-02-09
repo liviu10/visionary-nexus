@@ -44,9 +44,7 @@ INSTALLED_APPS = [
     'django_ckeditor_5',
 
     # Applications
-    'books',
-    'games',
-    'movies',
+    'library',
     'settings',
 ]
 

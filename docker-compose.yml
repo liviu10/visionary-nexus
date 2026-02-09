@@ -1,18 +1,24 @@
-version: '3'
-
 services:
   web:
     # Build the image using the Dockerfile in the current directory
-    build: .
-    # Mount the current directory into the container at /app
+    build:
+      context: .
+    
+    # Mount the current directory into the container for live-reloading
+    # Using :Z to handle SELinux permissions if you're on Linux
     volumes:
-      - .:/app
-    # Set environment variables
+      - .:/app:Z
+    
+    # Environment variables for the Django application
     environment:
       - DEBUG=1
       - SECRET_KEY=your_secret_key_here
-    # Expose port 8000 to the host
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    
+    # Mapping host port 9000 to container port 9000
     ports:
       - "9000:9000"
-    # Define the command to run the Django development server
-    command: python manage.py runserver 0.0.0.0:9000
+    
+    # Command to run the Django development server on the specified port
+    command: ["python", "manage.py", "runserver", "0.0.0.0:9000"]

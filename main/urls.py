@@ -20,7 +20,7 @@ from django.urls import path, include, reverse_lazy
 from django.shortcuts import redirect
 from main import settings
 
-admin.site.site_header = 'Visionary Nexus Application'
+admin.site.site_header = 'Visionary Nexus'
 admin.site.site_title = 'Visionary Nexus'
 
 

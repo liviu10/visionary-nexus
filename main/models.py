@@ -5,9 +5,6 @@ from main.utils import upload_to
 
 
 class BaseModel(models.Model):
-    image = models.ImageField(upload_to=upload_to, blank=True, null=True)
-    created_date = models.DateTimeField(default=timezone.now)
-    updated_date = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -22,11 +19,6 @@ class BaseModel(models.Model):
             models.Index(fields=["user"], name="user_idx"),
         ]
         ordering = ('id',)
-
-    def delete(self, *args, **kwargs):
-        if self.image:
-            self.image.storage.delete(self.image.name)
-        super().delete(*args, **kwargs)
 
 
 class BaseSettingModel(models.Model):
