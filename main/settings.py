@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'import_export',
     'django_ckeditor_5',
+    'admin_reorder',
 
     # Applications
     'library',
@@ -56,7 +57,24 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'admin_reorder.middleware.ModelAdminReorder',
 ]
+
+ADMIN_REORDER = (
+    {'app': 'library', 'models': (
+        'library.Book',
+        'library.Movie',
+        'library.Game',
+        'library.Genre',
+        'library.Status',
+        'library.Type',
+    )},
+    {'app': 'settings', 'models': (
+        'settings.Language',
+        'settings.Currency',
+    )},
+    {'app': 'auth', 'models': ('auth.User', 'auth.Group')},
+)
 
 ROOT_URLCONF = 'main.urls'
 
