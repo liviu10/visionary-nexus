@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'admin_reorder',
 
     # Applications
+    'family_budget',
     'library',
     'settings',
 ]
@@ -61,6 +62,14 @@ MIDDLEWARE = [
 ]
 
 ADMIN_REORDER = (
+    {'app': 'family_budget', 'models': (
+        'family_budget.Currency',
+        'family_budget.Category',
+        'family_budget.Subcategory',
+        'family_budget.Account',
+        'family_budget.AmortizationSchedule',
+        'family_budget.Transaction',
+    )},
     {'app': 'library', 'models': (
         'library.Book',
         'library.Movie',
