@@ -1,19 +1,28 @@
-import os
 import logging
+import joblib
+import numpy as np
 from import_export import resources, fields
-from import_export.widgets import ForeignKeyWidget
-from .models import Transaction, Category, Subcategory, Account
+from import_export.widgets import ForeignKeyWidget, DateWidget, DecimalWidget
+from django.db.models import Q
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import SGDClassifier
+from sklearn.pipeline import Pipeline
 
-# Privacy-focused configuration: Force offline mode for transformers
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
+from .models import Transaction, Category, Subcategory, Account
 
 logger = logging.getLogger(__name__)
 
-class BaseTransactionResource(resources.ModelResource):
-    """Base resource for transaction imports with local ML fallback."""
+class SmartTransactionResource(resources.ModelResource):
+    """
+    Clasa de BAZĂ. Aici stă toată inteligența:
+    1. Widget-uri pentru ForeignKeys (Cont, Categorie)
+    2. Logica de antrenare ML (SGDClassifier)
+    3. Logica de predicție
+    """
     
+    # Definim relațiile standard care sunt la fel peste tot
     bank_account = fields.Field(
-        column_name='bank_account',
+        column_name='bank_account', # Va fi suprascris în subclase dacă e cazul
         attribute='bank_account',
         widget=ForeignKeyWidget(Account, 'iban_account')
     )
@@ -28,82 +37,87 @@ class BaseTransactionResource(resources.ModelResource):
         widget=ForeignKeyWidget(Subcategory, 'name')
     )
 
-    KEYWORD_FLAGS = {} # To be overridden by subclasses
-
     class Meta:
         model = Transaction
+        # Câmpurile care trebuie importate în DB
         fields = ('id', 'bank_account', 'transaction_date', 'transaction_details', 'debit', 'credit', 'category', 'subcategory')
-        export_order = fields
+        # Identificatori unici pentru a evita duplicatele
+        import_id_fields = ['transaction_date', 'transaction_details', 'debit', 'credit']
         skip_unchanged = True
-        report_skipped = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.classifier = None
-        self._initialize_ml()
+        self.model_pipeline = None
+        self._train_model_on_history()
 
-    def _initialize_ml(self):
-        """Initialize the local ML classifier lazily and safely."""
+    def _train_model_on_history(self):
+        """Logica de antrenare automată la inițializare."""
+        # Luăm istoricul clasificat
+        history = Transaction.objects.filter(category__isnull=False).values_list(
+            'transaction_details', 'category__name', 'subcategory__name'
+        )
+
+        if len(history) < 5: # Minim 5 tranzacții ca să aibă sens
+            return
+
+        X_train = [h[0] for h in history]
+        # Eticheta este combinată: "Categorie||Subcategorie"
+        y_train = [f"{h[1]}||{h[2] if h[2] else ''}" for h in history]
+
+        self.model_pipeline = Pipeline([
+            ('tfidf', TfidfVectorizer(ngram_range=(1, 3), min_df=1)),
+            ('clf', SGDClassifier(loss='hinge', alpha=1e-3, max_iter=1000, random_state=42)),
+        ])
+        
         try:
-            from transformers import pipeline
-            self.classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-            logger.info(f"{self.__class__.__name__}: Local ML classifier initialized.")
+            self.model_pipeline.fit(X_train, y_train)
         except Exception as e:
-            logger.warning(f"ML Processing disabled: {str(e)}.")
-
-    def _match_keywords(self, text):
-        """Try to match keywords in transaction details."""
-        if not text:
-            return None, None
-            
-        text_upper = text.upper()
-        for keyword, mapping in self.KEYWORD_FLAGS.items():
-            if keyword in text_upper:
-                return mapping
-        return None, None
+            logger.warning(f"ML Training skipped: {e}")
 
     def before_import_row(self, row, **kwargs):
-        """
-        Logic hierarchy:
-        1. Exact Keyword Flags (Bank-Specific)
-        2. Local ML Fallback (SMART)
-        """
-        details = row.get('transaction_details')
-        if not details:
+        """Logica de predicție rulată pentru fiecare rând."""
+        # 1. Obținem textul tranzacției (numele coloanei depinde de clasa copil)
+        # 'transaction_details' este atributul intern al modelului Django
+        # row-ul vine cu cheile din CSV (ex: 'Detalii' sau 'Description')
+        
+        # Aici e trucul: trebuie să găsim care câmp din row corespunde lui 'transaction_details'
+        # Ne bazăm pe faptul că subclasa a mapat corect câmpul
+        
+        # Căutăm valoarea textului. Deoarece 'row' are cheile din CSV, trebuie să știm cum le-am mapat.
+        # Simplificare: facem predicția doar dacă câmpul category e gol
+        if row.get('category'):
             return
 
-        # 1. Keyword-Based Flags
-        cat_name, subcat_name = self._match_keywords(details)
-        if cat_name:
-            row['category'] = cat_name
-            if subcat_name:
-                row['subcategory'] = subcat_name
+        # Căutăm textul brut. Din păcate, `before_import_row` primește `row` cu cheile din fișierul importat.
+        # Trebuie să iterăm prin field-urile resursei pentru a găsi care e 'transaction_details'
+        
+        text_to_analyze = None
+        for field in self.get_fields():
+            if field.attribute == 'transaction_details':
+                # Luăm numele coloanei din CSV definit în resursă
+                column_name_in_csv = field.column_name
+                text_to_analyze = row.get(column_name_in_csv)
+                break
+        
+        if not text_to_analyze or not self.model_pipeline:
             return
 
-        # 2. Local ML Fallback
-        if self.classifier and not row.get('category'):
-            try:
-                labels = list(Category.objects.values_list('name', flat=True))
-                if labels:
-                    result = self.classifier(details, labels)
-                    row['category'] = result['labels'][0]
-            except Exception as e:
-                logger.error(f"ML Error: {str(e)}")
-
-    def get_import_id_fields(self):
-        return ['transaction_date', 'transaction_details', 'debit', 'credit', 'bank_account']
+        try:
+            prediction = self.model_pipeline.predict([text_to_analyze])[0]
+            parts = prediction.split('||')
+            row['category'] = parts[0] # Setăm numele categoriei (ForeignKeyWidget îl va căuta)
+            if len(parts) > 1 and parts[1]:
+                row['subcategory'] = parts[1]
+        except Exception:
+            pass
 
 
-class BankIngResource(BaseTransactionResource):
-    """Specific resource for ING Bank statements."""
-    KEYWORD_FLAGS = {
-        "AMZ": ("Shopping", "Amazon"),
-        "NETFLIX": ("Subscriptions", "Entertainment"),
-        "GOOGLE": ("Services", "Digital"),
-        "KFC": ("Food", "Restaurants"),
-        "SHELL": ("Transport", "Fuel"),
-    }
+class BankIngResource(SmartTransactionResource):
+    """Resource dedicat ING - mapează coloanele specifice ING"""
+    transaction_date = fields.Field(attribute='transaction_date', column_name='Data')
+    transaction_details = fields.Field(attribute='transaction_details', column_name='Detalii tranzactie')
+    debit = fields.Field(attribute='debit', column_name='Debit', widget=DecimalWidget())
+    credit = fields.Field(attribute='credit', column_name='Credit', widget=DecimalWidget())
     
-    class Meta(BaseTransactionResource.Meta):
-        name = "ING Bank"
-        model = Transaction
+    class Meta(SmartTransactionResource.Meta):
+        name = "Import ING (CSV/XLS)"

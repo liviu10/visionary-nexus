@@ -41,7 +41,7 @@ tzdata==2025.1
 setuptools==75.8.0
 wheel==0.45.1
 
-# Machine Learning & AI (Local Processing)
-torch>=2.0.0
-transformers>=4.40.0
-scikit-learn>=1.4.0
+# Machine Learning (Lightweight)
+scikit-learn==1.6.1
+numpy==2.2.2
+joblib==1.4.2

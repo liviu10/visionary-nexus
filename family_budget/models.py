@@ -1,6 +1,20 @@
-from django.contrib.auth.models import User
 from django.db import models
+from django.contrib.auth.models import User
 from django.db.models import UniqueConstraint, Q, CheckConstraint
+from django.core.exceptions import ValidationError
+
+class Currency(models.Model):
+    country = models.CharField(max_length=255, blank=True, null=True)
+    currency = models.CharField(max_length=255, blank=True, null=True)
+    code = models.CharField(max_length=3, unique=True) # Adăugat Unique pentru consistență
+
+    class Meta:
+        verbose_name = "Currency"
+        verbose_name_plural = "Currencies"
+
+    def __str__(self):
+        return self.code
+
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -20,11 +34,6 @@ class Subcategory(models.Model):
 
     class Meta:
         ordering = ('category', 'name')
-        verbose_name = "Subcategory"
-        verbose_name_plural = "Subcategories"
-        indexes = [
-            models.Index(fields=["name"], name="subcat_name_idx"),
-        ]
         constraints = [
             UniqueConstraint(fields=['category', 'name'], name='unique_subcat_per_cat')
         ]
@@ -38,19 +47,18 @@ class Account(models.Model):
     iban_account = models.CharField(max_length=34, unique=True)
     alias = models.CharField(max_length=100, blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='bank_accounts')
+    currency = models.ForeignKey(Currency, on_delete=models.PROTECT, related_name='accounts')
 
-    class Meta:
-        ordering = ('alias', 'bank')
-        verbose_name = "Account"
-        verbose_name_plural = "Accounts"
-        indexes = [
-            models.Index(fields=["bank"], name="account_bank_idx"),
-            models.Index(fields=["alias"], name="account_alias_idx"),
-        ]
+    def clean(self):
+        if self.iban_account:
+            self.iban_account = self.iban_account.replace(" ", "").upper()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.alias or self.bank} - {self.iban_account}"
-
+        return f"{self.alias or self.bank} - {self.iban_account} ({self.currency.code})"
 
 class Transaction(models.Model):
     bank_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_transactions')
@@ -63,19 +71,9 @@ class Transaction(models.Model):
     
     class Meta:
         ordering = ('-transaction_date',)
-        verbose_name = "Transaction"
-        verbose_name_plural = "Transactions"
-        indexes = [
-            models.Index(fields=["transaction_date"], name="transaction_date_idx"),
-            models.Index(fields=["category"], name="transaction_cat_idx"),
-            models.Index(fields=["subcategory"], name="transaction_subcat_idx"),
-        ]
         constraints = [
             CheckConstraint(
-                condition=(
-                    (Q(debit__gt=0) & Q(credit=0)) | 
-                    (Q(credit__gt=0) & Q(debit=0))
-                ),
+                condition=(Q(debit__gt=0) & Q(credit=0)) | (Q(credit__gt=0) & Q(debit=0)),
                 name='debit_exclude_credit'
             ),
             CheckConstraint(
@@ -84,8 +82,18 @@ class Transaction(models.Model):
             )
         ]
 
-    def __str__(self):
-        return f"{self.transaction_date}: {self.debit or self.credit}"
+    def clean(self):
+        super().clean()
+        # Validare: Subcategoria trebuie să aparțină categoriei selectate
+        if self.category and self.subcategory:
+            if self.subcategory.category != self.category:
+                raise ValidationError({
+                    'subcategory': f"Subcategoria '{self.subcategory.name}' nu aparține de '{self.category.name}'."
+                })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class AmortizationSchedule(models.Model):
