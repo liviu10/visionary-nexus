@@ -117,11 +117,12 @@ class Book(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='books')
 
     class Meta:
+        ordering = ('id',)
+        verbose_name = "Book"
+        verbose_name_plural = "Books"
         indexes = [
             models.Index(fields=["title"], name="book_title_idx"),
         ]
-        verbose_name = "Book"
-        verbose_name_plural = "Books"
 
     def __str__(self):
         return f"{self.authors} - {self.title}"
@@ -154,11 +155,12 @@ class Game(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='games')
 
     class Meta:
+        ordering = ('id',)
+        verbose_name = "Game"
+        verbose_name_plural = "Games"
         indexes = [
             models.Index(fields=["title"], name="game_title_idx"),
         ]
-        verbose_name = "Game"
-        verbose_name_plural = "Games"
 
     def __str__(self):
         genre_name = self.game_genre.name if self.game_genre else "No Genre"
@@ -197,11 +199,12 @@ class Movie(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='movies')
 
     class Meta:
+        ordering = ('id',)
+        verbose_name = "Movie"
+        verbose_name_plural = "Movies"
         indexes = [
             models.Index(fields=["title"], name="movie_title_idx"),
         ]
-        verbose_name = "Movie"
-        verbose_name_plural = "Movies"
 
     def __str__(self):
         genre_name = self.movie_genre.name if self.movie_genre else "No Genre"

@@ -1,0 +1,108 @@
+from django.contrib.auth.models import User
+from django.db import models
+from django.db.models import UniqueConstraint, Q, CheckConstraint
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    
+    class Meta:
+        ordering = ('name',)
+        verbose_name = "Category"
+        verbose_name_plural = "Categories"
+
+    def __str__(self):
+        return self.name
+
+
+class Subcategory(models.Model):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ('category', 'name')
+        verbose_name = "Subcategory"
+        verbose_name_plural = "Subcategories"
+        indexes = [
+            models.Index(fields=["name"], name="subcat_name_idx"),
+        ]
+        constraints = [
+            UniqueConstraint(fields=['category', 'name'], name='unique_subcat_per_cat')
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.category.name})"
+
+
+class Account(models.Model):
+    bank = models.CharField(max_length=100)
+    iban_account = models.CharField(max_length=34, unique=True)
+    alias = models.CharField(max_length=100, blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='bank_accounts')
+
+    class Meta:
+        ordering = ('alias', 'bank')
+        verbose_name = "Account"
+        verbose_name_plural = "Accounts"
+        indexes = [
+            models.Index(fields=["bank"], name="account_bank_idx"),
+            models.Index(fields=["alias"], name="account_alias_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.alias or self.bank} - {self.iban_account}"
+
+
+class Transaction(models.Model):
+    bank_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_transactions')
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, null=True, blank=True)
+    transaction_date = models.DateField()
+    transaction_details = models.CharField(max_length=1000)
+    debit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    class Meta:
+        ordering = ('-transaction_date',)
+        verbose_name = "Transaction"
+        verbose_name_plural = "Transactions"
+        indexes = [
+            models.Index(fields=["transaction_date"], name="transaction_date_idx"),
+            models.Index(fields=["category"], name="transaction_cat_idx"),
+            models.Index(fields=["subcategory"], name="transaction_subcat_idx"),
+        ]
+        constraints = [
+            CheckConstraint(
+                condition=(
+                    (Q(debit__gt=0) & Q(credit=0)) | 
+                    (Q(credit__gt=0) & Q(debit=0))
+                ),
+                name='debit_exclude_credit'
+            ),
+            CheckConstraint(
+                condition=Q(debit__gte=0) & Q(credit__gte=0),
+                name='no_negative_values'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.transaction_date}: {self.debit or self.credit}"
+
+
+class AmortizationSchedule(models.Model):
+    next_payment_date = models.DateField()
+    payment_amount = models.DecimalField(max_digits=15, decimal_places=2)
+    interest = models.DecimalField(max_digits=15, decimal_places=2)
+    capital_rate = models.DecimalField(max_digits=15, decimal_places=2)
+    capital_due_end_period = models.DecimalField(max_digits=15, decimal_places=2)
+    group_life_insurance_premium = models.DecimalField(max_digits=15, decimal_places=2)
+
+    class Meta:
+        ordering = ('next_payment_date',)
+        verbose_name = "Amortization schedule"
+        verbose_name_plural = "Amortization schedules"
+        indexes = [
+            models.Index(fields=["next_payment_date"], name="as_pay_date_idx"),
+        ]
+
+    def __str__(self):
+        return f"Payment {self.next_payment_date} - {self.payment_amount}"
