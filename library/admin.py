@@ -2,10 +2,12 @@ from django.contrib import admin
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from .models import Type, Genre, Status, Language, Book, Game, Movie
+from .resources import GenreResource, LanguageResource, StatusResource, TypeResource, GameResource
 
 
 @admin.register(Language)
-class LanguageAdmin(admin.ModelAdmin):
+class LanguageAdmin(ImportExportModelAdmin):
+    resource_class = LanguageResource
     list_display = ('id', 'name', 'code')
     list_filter = ('name',)
     search_fields = ('name',)
@@ -13,7 +15,8 @@ class LanguageAdmin(admin.ModelAdmin):
 
 
 @admin.register(Type)
-class TypeAdmin(admin.ModelAdmin):
+class TypeAdmin(ImportExportModelAdmin):
+    resource_class = TypeResource
     list_display = ('id', 'name', 'category')
     list_filter = ('category',)
     search_fields = ('name',)
@@ -21,7 +24,8 @@ class TypeAdmin(admin.ModelAdmin):
 
 
 @admin.register(Genre)
-class GenreAdmin(admin.ModelAdmin):
+class GenreAdmin(ImportExportModelAdmin):
+    resource_class = GenreResource
     list_display = ('id', 'name', 'category')
     list_filter = ('category',)
     search_fields = ('name',)
@@ -29,7 +33,8 @@ class GenreAdmin(admin.ModelAdmin):
 
 
 @admin.register(Status)
-class StatusAdmin(admin.ModelAdmin):
+class StatusAdmin(ImportExportModelAdmin):
+    resource_class = StatusResource
     list_display = ('id', 'name', 'category')
     list_filter = ('category',)
     search_fields = ('name',)
@@ -58,21 +63,22 @@ class BookAdmin(ImportExportModelAdmin):
         }),
     )
 
+    @admin.display(description="Cover")
     def show_image(self, obj):
         if obj.goodreads_image_link:
             return format_html('<img src="{}" style="height: 50px; border-radius: 5px;" />', obj.goodreads_image_link)
         return "-"
-    show_image.short_description = "Cover"
 
+    @admin.display(description="Cover Preview")
     def show_image_detail(self, obj):
         if obj.goodreads_image_link:
             return format_html('<img src="{}" style="max-height: 200px; border-radius: 5px;" />', obj.goodreads_image_link)
         return "No image link provided"
-    show_image_detail.short_description = "Cover Preview"
 
 
 @admin.register(Game)
 class GameAdmin(ImportExportModelAdmin):
+    resource_class = GameResource
     list_display = ('title', 'game_genre', 'game_status', 'rating', 'released_date', 'user', 'show_image')
     list_filter = ('game_status', 'game_genre', 'user', 'released_date')
     search_fields = ('title',)
@@ -93,17 +99,17 @@ class GameAdmin(ImportExportModelAdmin):
         }),
     )
 
+    @admin.display(description="Cover")
     def show_image(self, obj):
         if obj.game_image_link:
             return format_html('<img src="{}" style="height: 50px; border-radius: 5px;" />', obj.game_image_link)
         return "-"
-    show_image.short_description = "Cover"
 
+    @admin.display(description="Cover Preview")
     def show_image_detail(self, obj):
         if obj.game_image_link:
             return format_html('<img src="{}" style="max-height: 200px; border-radius: 5px;" />', obj.game_image_link)
         return "No image link"
-    show_image_detail.short_description = "Cover Preview"
 
 
 @admin.register(Movie)
@@ -128,14 +134,14 @@ class MovieAdmin(ImportExportModelAdmin):
         }),
     )
 
+    @admin.display(description="Poster")
     def show_image(self, obj):
         if obj.movie_image_link:
             return format_html('<img src="{}" style="height: 50px; border-radius: 5px;" />', obj.movie_image_link)
         return "-"
-    show_image.short_description = "Poster"
 
+    @admin.display(description="Poster Preview")
     def show_image_detail(self, obj):
         if obj.movie_image_link:
             return format_html('<img src="{}" style="max-height: 200px; border-radius: 5px;" />', obj.movie_image_link)
         return "No image link"
-    show_image_detail.short_description = "Poster Preview"
