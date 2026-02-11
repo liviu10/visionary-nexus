@@ -2,7 +2,6 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django_ckeditor_5.fields import CKEditor5Field
-from settings.models import Language
 
 class Category(models.TextChoices):
     BOOK = 'BOOK', 'Book'
@@ -68,6 +67,22 @@ class Status(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_category_display()})"
+
+
+class Language(models.Model):
+    name = models.CharField(max_length=255, blank=False, null=False)
+    code = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        ordering = ('id',)
+        verbose_name = "Language"
+        verbose_name_plural = "Languages"
+        indexes = [
+            models.Index(fields=["name"], name="language_name_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name}"
 
 
 class Book(models.Model):

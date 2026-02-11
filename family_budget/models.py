@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 class Currency(models.Model):
     country = models.CharField(max_length=255, blank=True, null=True)
     currency = models.CharField(max_length=255, blank=True, null=True)
-    code = models.CharField(max_length=3, unique=True) # Adăugat Unique pentru consistență
+    code = models.CharField(max_length=3, unique=True)
 
     class Meta:
         verbose_name = "Currency"
@@ -84,7 +84,6 @@ class Transaction(models.Model):
 
     def clean(self):
         super().clean()
-        # Validare: Subcategoria trebuie să aparțină categoriei selectate
         if self.category and self.subcategory:
             if self.subcategory.category != self.category:
                 raise ValidationError({

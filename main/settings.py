@@ -42,12 +42,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'import_export',
     'django_ckeditor_5',
-    'admin_reorder',
 
     # Applications
     'family_budget',
     'library',
-    'settings',
 ]
 
 MIDDLEWARE = [
@@ -58,32 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'admin_reorder.middleware.ModelAdminReorder',
 ]
-
-ADMIN_REORDER = (
-    {'app': 'family_budget', 'models': (
-        'family_budget.Currency',
-        'family_budget.Category',
-        'family_budget.Subcategory',
-        'family_budget.Account',
-        'family_budget.AmortizationSchedule',
-        'family_budget.Transaction',
-    )},
-    {'app': 'library', 'models': (
-        'library.Book',
-        'library.Movie',
-        'library.Game',
-        'library.Genre',
-        'library.Status',
-        'library.Type',
-    )},
-    {'app': 'settings', 'models': (
-        'settings.Language',
-        'settings.Currency',
-    )},
-    {'app': 'auth', 'models': ('auth.User', 'auth.Group')},
-)
 
 ROOT_URLCONF = 'main.urls'
 
@@ -211,8 +184,3 @@ CKEDITOR_5_CONFIGS = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Google books API
-GOOGLE_BOOKS_API_ENDPOINT = str(os.getenv('GOOGLE_BOOKS_API_ENDPOINT'))
-GOOGLE_BOOKS_API_KEY = str(os.getenv('GOOGLE_BOOKS_API_KEY'))
-GOOGLE_BOOKS_CLIENT_ID = str(os.getenv('GOOGLE_BOOKS_CLIENT_ID'))
-GOOGLE_BOOKS_CLIENT_SECRET = str(os.getenv('GOOGLE_BOOKS_CLIENT_SECRET'))
