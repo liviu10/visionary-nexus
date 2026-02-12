@@ -92,7 +92,7 @@ class TransactionResource(resources.ModelResource):
 
     class Meta:
         model = Transaction
-        fields = ('bank_account', 'transaction_date', 'transaction_details', 'debit', 'credit', 'user')
+        fields = ('bank_account', 'transaction_date', 'transaction_details', 'debit', 'credit')
         import_id_fields = ('transaction_date', 'transaction_details', 'debit', 'credit')
 
     def before_import(self, dataset, using_transactions=True, dry_run=False, **kwargs):

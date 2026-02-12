@@ -45,9 +45,20 @@ class SubcategoryAdmin(UserImportMixin, ImportExportModelAdmin):
     list_select_related = ('category',)
 
 
+class TransactionInline(admin.TabularInline):
+    model = Transaction
+    extra = 0
+    fields = ('transaction_date', 'transaction_details', 'debit', 'credit', 'category', 'subcategory')
+    readonly_fields = ('transaction_date', 'transaction_details', 'debit', 'credit')
+    show_change_link = True
+    can_delete = False
+    ordering = ('-transaction_date',)
+
+
 @admin.register(Account)
 class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
     resource_classes = [AccountResource]
+    inlines = [TransactionInline]
     list_display = ('alias', 'bank', 'iban_account', 'currency', 'get_balance', 'user')
     list_filter = ('bank', 'user', 'currency')
     search_fields = ('bank', 'iban_account', 'alias')
@@ -63,11 +74,12 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
 
 
 @admin.register(Transaction)
-class TransactionAdmin(UserImportMixin, ImportExportModelAdmin):
+class TransactionAdmin(ImportExportModelAdmin):
     resource_classes = [TransactionResource]
     list_display = (
         'transaction_date', 'bank_account', 'category', 
-        'subcategory', 'get_amount', 'transaction_details', 'user'
+        'transaction_date', 'bank_account', 'category', 
+        'subcategory', 'get_amount', 'transaction_details'
     )
     list_filter = ('transaction_date', 'category', 'bank_account', 'subcategory')
     search_fields = ('transaction_details',)
