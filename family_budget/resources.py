@@ -1,123 +1,180 @@
 import logging
 import joblib
 import numpy as np
-from import_export import resources, fields
+from import_export import resources, fields, widgets
 from import_export.widgets import ForeignKeyWidget, DateWidget, DecimalWidget
 from django.db.models import Q
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline
+from django.contrib.auth.models import User
+from .models import Transaction, Category, Subcategory, Account, Currency, AmortizationSchedule
+import tablib
+import re
+from .models import Transaction
 
-from .models import Transaction, Category, Subcategory, Account
 
 logger = logging.getLogger(__name__)
 
-class SmartTransactionResource(resources.ModelResource):
-    """
-    Clasa de BAZĂ. Aici stă toată inteligența:
-    1. Widget-uri pentru ForeignKeys (Cont, Categorie)
-    2. Logica de antrenare ML (SGDClassifier)
-    3. Logica de predicție
-    """
-    
-    # Definim relațiile standard care sunt la fel peste tot
-    bank_account = fields.Field(
-        column_name='bank_account', # Va fi suprascris în subclase dacă e cazul
-        attribute='bank_account',
-        widget=ForeignKeyWidget(Account, 'iban_account')
-    )
+
+class BoundUserResourceMixin:
+    def __init__(self, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(**kwargs)
+
+    def before_save_instance(self, instance, using_transactions, dry_run):
+        if self.user:
+            instance.user = self.user
+        super().before_save_instance(instance, using_transactions, dry_run)
+
+
+class CurrencyResource(BoundUserResourceMixin, resources.ModelResource):
+    class Meta:
+        model = Currency
+        fields = ('country', 'currency', 'code')
+        import_id_fields = ('code',)
+
+
+class CategoryResource(BoundUserResourceMixin, resources.ModelResource):
+    class Meta:
+        model = Category
+        fields = ('name',)
+        import_id_fields = ('name',)
+
+
+class SubcategoryResource(BoundUserResourceMixin, resources.ModelResource):
     category = fields.Field(
         column_name='category',
         attribute='category',
         widget=ForeignKeyWidget(Category, 'name')
     )
-    subcategory = fields.Field(
-        column_name='subcategory',
-        attribute='subcategory',
-        widget=ForeignKeyWidget(Subcategory, 'name')
+
+    class Meta:
+        model = Subcategory
+        fields = ('category', 'name')
+        import_id_fields = ('category', 'name')
+
+
+class AmortizationScheduleResource(BoundUserResourceMixin, resources.ModelResource):
+    class Meta:
+        model = AmortizationSchedule
+        fields = (
+            'next_payment_date', 'payment_amount', 'interest', 
+            'capital_rate', 'capital_due_end_period', 'group_life_insurance_premium'
+        )
+        import_id_fields = ('next_payment_date',)
+
+
+class AccountResource(BoundUserResourceMixin, resources.ModelResource):
+    currency = fields.Field(
+        column_name='currency',
+        attribute='currency',
+        widget=ForeignKeyWidget(Currency, 'code')
+    )
+
+    class Meta:
+        model = Account
+        fields = ('bank', 'iban_account', 'alias', 'currency')
+        import_id_fields = ('iban_account',)
+        export_order = ('bank', 'iban_account', 'alias', 'currency')
+
+
+class TransactionResource(resources.ModelResource):
+    transaction_date = fields.Field(attribute='transaction_date', column_name='date')
+    transaction_details = fields.Field(attribute='transaction_details', column_name='details')
+    debit = fields.Field(attribute='debit', column_name='debit', default=0)
+    credit = fields.Field(attribute='credit', column_name='credit', default=0)
+    bank_account = fields.Field(
+        attribute='bank_account', 
+        column_name='bank_account_id', 
+        widget=widgets.ForeignKeyWidget(Account, 'id')
     )
 
     class Meta:
         model = Transaction
-        # Câmpurile care trebuie importate în DB
-        fields = ('id', 'bank_account', 'transaction_date', 'transaction_details', 'debit', 'credit', 'category', 'subcategory')
-        # Identificatori unici pentru a evita duplicatele
-        import_id_fields = ['transaction_date', 'transaction_details', 'debit', 'credit']
-        skip_unchanged = True
+        fields = ('bank_account', 'transaction_date', 'transaction_details', 'debit', 'credit', 'user')
+        import_id_fields = ('transaction_date', 'transaction_details', 'debit', 'credit')
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.model_pipeline = None
-        self._train_model_on_history()
+    def before_import(self, dataset, using_transactions=True, dry_run=False, **kwargs):
+        filename = kwargs.get('file_name', '')
+        clean_filename = filename.replace(" ", "").upper()
+        iban_match = re.search(r'RO\d{2}[A-Z]{4}[A-Z0-9]{16}', clean_filename)
+        found_account_id = None
+        if iban_match:
+            iban = iban_match.group()
+            try:
+                acc = Account.objects.get(iban_account__iexact=iban)
+                found_account_id = acc.id
+            except Account.DoesNotExist:
+                pass
 
-    def _train_model_on_history(self):
-        """Logica de antrenare automată la inițializare."""
-        # Luăm istoricul clasificat
-        history = Transaction.objects.filter(category__isnull=False).values_list(
-            'transaction_details', 'category__name', 'subcategory__name'
-        )
+        luni = {
+            'ianuarie': '01', 'februarie': '02', 'martie': '03', 'aprilie': '04',
+            'mai': '05', 'iunie': '06', 'iulie': '07', 'august': '08',
+            'septembrie': '09', 'octombrie': '10', 'noiembrie': '11', 'decembrie': '12'
+        }
 
-        if len(history) < 5: # Minim 5 tranzacții ca să aibă sens
-            return
+        def parse_ing_date(val):
+            if not val: return None
+            val = str(val).lower().strip()
+            match = re.search(r'(\d{1,2})\s+([a-zăîâşţșț]+)\s+(\d{4})', val)
+            if match:
+                day, month_str, year = match.groups()
+                month_str = month_str.replace('ş', 's').replace('ș', 's').replace('ţ', 't').replace('ț', 't')
+                mm = luni.get(month_str)
+                if mm:
+                    return f"{year}-{mm}-{day.zfill(2)}"
+            return None
 
-        X_train = [h[0] for h in history]
-        # Eticheta este combinată: "Categorie||Subcategorie"
-        y_train = [f"{h[1]}||{h[2] if h[2] else ''}" for h in history]
+        def clean_ing_num(val):
+            if not val or str(val).strip() in ['', 'nan', 'None']: return "0"
+            clean = str(val).replace('"', '').replace('.', '').replace(',', '.')
+            return clean if re.match(r'^-?\d+(\.\d+)?$', clean) else "0"
 
-        self.model_pipeline = Pipeline([
-            ('tfidf', TfidfVectorizer(ngram_range=(1, 3), min_df=1)),
-            ('clf', SGDClassifier(loss='hinge', alpha=1e-3, max_iter=1000, random_state=42)),
-        ])
-        
-        try:
-            self.model_pipeline.fit(X_train, y_train)
-        except Exception as e:
-            logger.warning(f"ML Training skipped: {e}")
+        new_rows = []
+        current_transaction = None
+        found_at_idx = 1 
 
-    def before_import_row(self, row, **kwargs):
-        """Logica de predicție rulată pentru fiecare rând."""
-        # 1. Obținem textul tranzacției (numele coloanei depinde de clasa copil)
-        # 'transaction_details' este atributul intern al modelului Django
-        # row-ul vine cu cheile din CSV (ex: 'Detalii' sau 'Description')
-        
-        # Aici e trucul: trebuie să găsim care câmp din row corespunde lui 'transaction_details'
-        # Ne bazăm pe faptul că subclasa a mapat corect câmpul
-        
-        # Căutăm valoarea textului. Deoarece 'row' are cheile din CSV, trebuie să știm cum le-am mapat.
-        # Simplificare: facem predicția doar dacă câmpul category e gol
-        if row.get('category'):
-            return
+        for row in dataset:
+            r = [str(x).strip() if x is not None else "" for x in row]
+            
+            potential_date = None
+            for i, cell in enumerate(r):
+                d = parse_ing_date(cell)
+                if d:
+                    potential_date = d
+                    found_at_idx = i
+                    break
+            
+            if potential_date:
+                if current_transaction:
+                    new_rows.append(current_transaction)
+                
+                current_transaction = {
+                    'date': potential_date,
+                    'details': r[found_at_idx + 3] if len(r) > found_at_idx + 3 else "",
+                    'debit': clean_ing_num(r[found_at_idx + 6] if len(r) > found_at_idx + 6 else "0"),
+                    'credit': clean_ing_num(r[found_at_idx + 8] if len(r) > found_at_idx + 8 else "0"),
+                    'bank_account_id': found_account_id
+                }
+            elif current_transaction:
+                idx_detalii = found_at_idx + 3
+                extra = r[idx_detalii] if len(r) > idx_detalii else ""
+                if extra and not any(x in extra for x in ['Titular', 'Roxana', 'Şef', 'Pagina']):
+                    current_transaction['details'] += f" | {extra}"
 
-        # Căutăm textul brut. Din păcate, `before_import_row` primește `row` cu cheile din fișierul importat.
-        # Trebuie să iterăm prin field-urile resursei pentru a găsi care e 'transaction_details'
-        
-        text_to_analyze = None
-        for field in self.get_fields():
-            if field.attribute == 'transaction_details':
-                # Luăm numele coloanei din CSV definit în resursă
-                column_name_in_csv = field.column_name
-                text_to_analyze = row.get(column_name_in_csv)
-                break
-        
-        if not text_to_analyze or not self.model_pipeline:
-            return
+        if current_transaction:
+            new_rows.append(current_transaction)
 
-        try:
-            prediction = self.model_pipeline.predict([text_to_analyze])[0]
-            parts = prediction.split('||')
-            row['category'] = parts[0] # Setăm numele categoriei (ForeignKeyWidget îl va căuta)
-            if len(parts) > 1 and parts[1]:
-                row['subcategory'] = parts[1]
-        except Exception:
-            pass
+        dataset.wipe()
+        dataset.headers = ['date', 'details', 'debit', 'credit', 'bank_account_id']
+        for item in new_rows:
+            dataset.append([
+                item['date'], 
+                item['details'], 
+                item['debit'], 
+                item['credit'], 
+                item['bank_account_id']
+            ])
 
-
-class BankIngResource(SmartTransactionResource):
-    """Resource dedicat ING - mapează coloanele specifice ING"""
-    transaction_date = fields.Field(attribute='transaction_date', column_name='Data')
-    transaction_details = fields.Field(attribute='transaction_details', column_name='Detalii tranzactie')
-    debit = fields.Field(attribute='debit', column_name='Debit', widget=DecimalWidget())
-    credit = fields.Field(attribute='credit', column_name='Credit', widget=DecimalWidget())
-    
-    class Meta(SmartTransactionResource.Meta):
-        name = "Import ING (CSV/XLS)"
+        super().before_import(dataset, using_transactions=True, dry_run=False, **kwargs)

@@ -8,6 +8,7 @@ class Currency(models.Model):
     country = models.CharField(max_length=255, blank=True, null=True)
     currency = models.CharField(max_length=255, blank=True, null=True)
     code = models.CharField(max_length=3, unique=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='currencies')
 
     class Meta:
         verbose_name = "Currency"
@@ -19,6 +20,7 @@ class Currency(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='categories')
     
     class Meta:
         ordering = ('name',)
@@ -32,6 +34,7 @@ class Category(models.Model):
 class Subcategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
     name = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategories')
 
     class Meta:
         ordering = ('category', 'name')
@@ -49,8 +52,8 @@ class Account(models.Model):
     bank = models.CharField(max_length=100)
     iban_account = models.CharField(max_length=34, unique=True)
     alias = models.CharField(max_length=100, blank=True, null=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='bank_accounts')
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, related_name='accounts')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='accounts')
 
     def clean(self):
         if self.iban_account:
@@ -72,6 +75,7 @@ class Transaction(models.Model):
     transaction_details = models.CharField(max_length=1000)
     debit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     
     class Meta:
         ordering = ('-transaction_date',)
@@ -106,6 +110,7 @@ class AmortizationSchedule(models.Model):
     capital_rate = models.DecimalField(max_digits=15, decimal_places=2)
     capital_due_end_period = models.DecimalField(max_digits=15, decimal_places=2)
     group_life_insurance_premium = models.DecimalField(max_digits=15, decimal_places=2)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='amortization_schedules')
 
     class Meta:
         ordering = ('next_payment_date',)

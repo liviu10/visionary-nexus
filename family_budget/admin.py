@@ -2,25 +2,43 @@ from django.contrib import admin
 from django.db.models import Sum
 from import_export.admin import ImportExportModelAdmin
 from .models import Category, Subcategory, Account, Transaction, AmortizationSchedule, Currency
-from .resources import BankIngResource
+from .resources import (
+    CurrencyResource, CategoryResource, 
+    SubcategoryResource, AccountResource, AmortizationScheduleResource, TransactionResource
+)
+
+
+class UserImportMixin:
+    def get_resource_kwargs(self, request, *args, **kwargs):
+        kwargs = super().get_resource_kwargs(request, *args, **kwargs)
+        kwargs.update({"user": request.user})
+        return kwargs
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.user = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Currency)
-class CurrencyAdmin(admin.ModelAdmin):
+class CurrencyAdmin(UserImportMixin, ImportExportModelAdmin):
+    resource_classes = [CurrencyResource]
     list_display = ('code', 'currency', 'country')
     search_fields = ('code', 'currency')
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'id')
+class CategoryAdmin(UserImportMixin, ImportExportModelAdmin):
+    resource_classes = [CategoryResource]
+    list_display = ('name',)
     search_fields = ('name',)
     ordering = ('name',)
 
 
 @admin.register(Subcategory)
-class SubcategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'id')
+class SubcategoryAdmin(UserImportMixin, ImportExportModelAdmin):
+    resource_classes = [SubcategoryResource]
+    list_display = ('name', 'category')
     list_filter = ('category',)
     search_fields = ('name',)
     ordering = ('category', 'name')
@@ -28,7 +46,8 @@ class SubcategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Account)
-class AccountAdmin(admin.ModelAdmin):
+class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
+    resource_classes = [AccountResource]
     list_display = ('alias', 'bank', 'iban_account', 'currency', 'get_balance', 'user')
     list_filter = ('bank', 'user', 'currency')
     search_fields = ('bank', 'iban_account', 'alias')
@@ -44,11 +63,11 @@ class AccountAdmin(admin.ModelAdmin):
 
 
 @admin.register(Transaction)
-class TransactionAdmin(ImportExportModelAdmin):
-    resource_classes = [BankIngResource]
+class TransactionAdmin(UserImportMixin, ImportExportModelAdmin):
+    resource_classes = [TransactionResource]
     list_display = (
         'transaction_date', 'bank_account', 'category', 
-        'subcategory', 'get_amount', 'transaction_details'
+        'subcategory', 'get_amount', 'transaction_details', 'user'
     )
     list_filter = ('transaction_date', 'category', 'bank_account', 'subcategory')
     search_fields = ('transaction_details',)
@@ -74,7 +93,8 @@ class TransactionAdmin(ImportExportModelAdmin):
 
 
 @admin.register(AmortizationSchedule)
-class AmortizationScheduleAdmin(ImportExportModelAdmin):
+class AmortizationScheduleAdmin(UserImportMixin, ImportExportModelAdmin):
+    resource_classes = [AmortizationScheduleResource]
     list_display = (
         'next_payment_date', 'payment_amount', 'interest', 
         'capital_rate', 'capital_due_end_period', 'group_life_insurance_premium'
