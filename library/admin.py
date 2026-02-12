@@ -2,52 +2,51 @@ from django.contrib import admin
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from .models import Type, Genre, Status, Language, Book, Game, Movie
-from .resources import GenreResource, LanguageResource, StatusResource, TypeResource, GameResource
+from .resources import GameResource, BookResource, MovieResource
 
 
-@admin.register(Language)
-class LanguageAdmin(ImportExportModelAdmin):
-    resource_class = LanguageResource
-    list_display = ('id', 'name', 'code')
-    list_filter = ('name',)
+class LanguageAdmin(admin.ModelAdmin):
     search_fields = ('name',)
-    ordering = ('id',)
+    def has_module_permission(self, request): return False
 
-
-@admin.register(Type)
-class TypeAdmin(ImportExportModelAdmin):
-    resource_class = TypeResource
-    list_display = ('id', 'name', 'category')
-    list_filter = ('category',)
+class TypeAdmin(admin.ModelAdmin):
     search_fields = ('name',)
-    ordering = ('category', 'name')
+    def has_module_permission(self, request): return False
 
-
-@admin.register(Genre)
-class GenreAdmin(ImportExportModelAdmin):
-    resource_class = GenreResource
-    list_display = ('id', 'name', 'category')
-    list_filter = ('category',)
+class GenreAdmin(admin.ModelAdmin):
     search_fields = ('name',)
-    ordering = ('category', 'name')
+    def has_module_permission(self, request): return False
 
-
-@admin.register(Status)
-class StatusAdmin(ImportExportModelAdmin):
-    resource_class = StatusResource
-    list_display = ('id', 'name', 'category')
-    list_filter = ('category',)
+class StatusAdmin(admin.ModelAdmin):
     search_fields = ('name',)
-    ordering = ('category', 'id')
+    def has_module_permission(self, request): return False
+
+admin.site.register(Language, LanguageAdmin)
+admin.site.register(Type, TypeAdmin)
+admin.site.register(Genre, GenreAdmin)
+admin.site.register(Status, StatusAdmin)
+
+
+class UserImportMixin:
+    def get_resource_kwargs(self, request, *args, **kwargs):
+        kwargs = super().get_resource_kwargs(request, *args, **kwargs)
+        kwargs.update({"user": request.user})
+        return kwargs
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.user = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Book)
-class BookAdmin(ImportExportModelAdmin):
+class BookAdmin(UserImportMixin, ImportExportModelAdmin):
+    resource_class = BookResource
     list_display = ('title', 'authors', 'book_genre', 'book_status', 'rating', 'user', 'show_image')
     list_filter = ('book_status', 'book_genre', 'book_type', 'book_language', 'user', 'date_added')
     search_fields = ('title', 'authors', 'isbn_13')
-    readonly_fields = ('date_added', 'show_image_detail')
-    
+    readonly_fields = ('date_added', 'show_image_detail', 'user')
+    autocomplete_fields = ('book_type', 'book_language', 'book_genre', 'book_status')
     fieldsets = (
         ('General Information', {
             'fields': ('title', 'authors', 'book_type', 'book_language', 'user')
@@ -77,13 +76,13 @@ class BookAdmin(ImportExportModelAdmin):
 
 
 @admin.register(Game)
-class GameAdmin(ImportExportModelAdmin):
+class GameAdmin(UserImportMixin, ImportExportModelAdmin):
     resource_class = GameResource
     list_display = ('title', 'game_genre', 'game_status', 'rating', 'released_date', 'user', 'show_image')
     list_filter = ('game_status', 'game_genre', 'user', 'released_date')
     search_fields = ('title',)
-    readonly_fields = ('show_image_detail',)
-
+    readonly_fields = ('show_image_detail', 'user')
+    autocomplete_fields = ('game_genre', 'game_status')
     fieldsets = (
         ('Game Info', {
             'fields': ('title', 'game_genre', 'released_date', 'user')
@@ -113,12 +112,13 @@ class GameAdmin(ImportExportModelAdmin):
 
 
 @admin.register(Movie)
-class MovieAdmin(ImportExportModelAdmin):
+class MovieAdmin(UserImportMixin, ImportExportModelAdmin):
+    resource_class = MovieResource
     list_display = ('title', 'movie_type', 'movie_genre', 'movie_status', 'rating', 'launch_date', 'user', 'show_image')
     list_filter = ('movie_status', 'movie_genre', 'movie_type', 'user', 'launch_date')
     search_fields = ('title', 'original_title')
-    readonly_fields = ('show_image_detail',)
-
+    readonly_fields = ('show_image_detail', 'user')
+    autocomplete_fields = ('movie_type', 'movie_genre', 'movie_status')
     fieldsets = (
         ('Movie Info', {
             'fields': ('title', 'original_title', 'movie_type', 'movie_genre', 'launch_date', 'user')

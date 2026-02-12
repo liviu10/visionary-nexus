@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models import UniqueConstraint, Q, CheckConstraint
 from django.core.exceptions import ValidationError
 
+
 class Currency(models.Model):
     country = models.CharField(max_length=255, blank=True, null=True)
     currency = models.CharField(max_length=255, blank=True, null=True)
@@ -34,6 +35,8 @@ class Subcategory(models.Model):
 
     class Meta:
         ordering = ('category', 'name')
+        verbose_name = "Subcategory"
+        verbose_name_plural = "Subcategories"
         constraints = [
             UniqueConstraint(fields=['category', 'name'], name='unique_subcat_per_cat')
         ]
@@ -59,6 +62,7 @@ class Account(models.Model):
 
     def __str__(self):
         return f"{self.alias or self.bank} - {self.iban_account} ({self.currency.code})"
+
 
 class Transaction(models.Model):
     bank_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_transactions')
