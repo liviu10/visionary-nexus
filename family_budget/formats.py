@@ -119,7 +119,6 @@ class INGPDF(Format):
                                 current_tx['credit'] = amount
                             else:
                                 current_tx['debit'] = amount
-                                
                         elif current_tx:
                             # Dacă rândul nu are dată, dar avem o tranzacție activă, este un rând de detalii
                             line_amount = clean_amount(line_clean)
