@@ -5,10 +5,11 @@ from django.forms import Textarea
 from import_export.admin import ImportExportModelAdmin
 from .models import Category, Subcategory, Account, AccountTransaction, AmortizationSchedule, Currency
 from .resources import (
-    CurrencyResource, CategoryResource, 
-    SubcategoryResource, AccountResource, AmortizationScheduleResource, AccountTransactionResource
+    CurrencyResource, CategoryResource,
+    SubcategoryResource, AccountResource, AmortizationScheduleResource,
+    AccountTransactionResource
 )
-from .formats import INGPDF
+
 
 
 class UserImportMixin:
@@ -87,7 +88,22 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
 @admin.register(AccountTransaction)
 class AccountTransactionAdmin(ImportExportModelAdmin):
     resource_classes = [AccountTransactionResource]
-    formats = [INGPDF]
+
+    def get_import_data_kwargs(self, request, *args, **kwargs):
+        kw = super().get_import_data_kwargs(request, *args, **kwargs)
+        form = kwargs.get('form')
+        if form and hasattr(form, 'cleaned_data'):
+            # During initial import (ImportForm)
+            import_file = form.cleaned_data.get('import_file')
+            if import_file:
+                kw['import_filename'] = import_file.name
+            else:
+                # During confirm step (ConfirmImportForm)
+                original_file_name = form.cleaned_data.get('original_file_name', '')
+                if original_file_name:
+                    kw['import_filename'] = original_file_name
+        return kw
+
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 4, 'cols': 40})},
         models.CharField: {'widget': Textarea(attrs={'rows': 3, 'cols': 40})},
