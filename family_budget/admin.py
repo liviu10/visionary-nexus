@@ -10,8 +10,6 @@ from .resources import (
     AccountTransactionResource
 )
 
-
-
 class UserImportMixin:
     def get_resource_kwargs(self, request, *args, **kwargs):
         kwargs = super().get_resource_kwargs(request, *args, **kwargs)
@@ -85,23 +83,138 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
         return f"{balance:,.2f} {obj.currency.code}"
 
 
+# @admin.register(AccountTransaction)
+# class AccountTransactionAdmin(ImportExportModelAdmin):
+#     resource_classes = [AccountTransactionResource]
+
+#     def get_import_data_kwargs(self, request, *args, **kwargs):
+#         kw = super().get_import_data_kwargs(request, *args, **kwargs)
+#         form = kwargs.get('form')
+#         if form and hasattr(form, 'cleaned_data'):
+#             # During initial import (ImportForm)
+#             import_file = form.cleaned_data.get('import_file')
+#             if import_file:
+#                 kw['import_filename'] = import_file.name
+#             else:
+#                 # During confirm step (ConfirmImportForm)
+#                 original_file_name = form.cleaned_data.get('original_file_name', '')
+#                 if original_file_name:
+#                     kw['import_filename'] = original_file_name
+#         return kw
+
+#     formfield_overrides = {
+#         models.TextField: {'widget': Textarea(attrs={'rows': 4, 'cols': 40})},
+#         models.CharField: {'widget': Textarea(attrs={'rows': 3, 'cols': 40})},
+#     }
+#     list_display = (
+#         'transaction_date', 'bank_account', 'category', 
+#         'subcategory', 'get_amount', 'transaction_details'
+#     )
+#     list_filter = ('transaction_date', 'category', 'bank_account', 'subcategory')
+#     search_fields = ('transaction_details',)
+#     list_select_related = ('bank_account', 'category', 'subcategory', 'bank_account__currency')
+
+#     @admin.display(description='Amount', ordering='debit')
+#     def get_amount(self, obj):
+#         if obj.debit > 0:
+#             return f"-{obj.debit}"
+#         return f"+{obj.credit}"
+
+#     fieldsets = (
+#         ('General Information', {
+#             'fields': ('bank_account', 'transaction_date', 'transaction_details')
+#         }),
+#         ('Categorization', {
+#             'fields': ('category', 'subcategory')
+#         }),
+#         ('Amounts', {
+#             'fields': ('debit', 'credit')
+#         }),
+#     )
+
+
+import io
+import csv
+from django.shortcuts import render
+from django.contrib import admin
+from import_export.admin import ImportExportModelAdmin
+from .models import AccountTransaction
+from .resources import AccountTransactionResource
+from django.forms import Textarea
+from django.db import models
+
 @admin.register(AccountTransaction)
 class AccountTransactionAdmin(ImportExportModelAdmin):
     resource_classes = [AccountTransactionResource]
 
+    def import_action(self, request, *args, **kwargs):
+        import csv
+        import io
+        if request.method == "POST" and "import_file" in request.FILES:
+            print("\n" + "!"*20 + " [DEBUG ADMIN] START IMPORT_ACTION " + "!"*20, flush=True)
+            import_file = request.FILES['import_file']
+            print(f"DEBUG: Fisier receptionat: {import_file.name}", flush=True)
+
+            try:
+                # Citim continutul brut
+                raw_content = import_file.read()
+                # Incercam decodare cu utf-8-sig (pentru BOM-ul Excel)
+                try:
+                    decoded_content = raw_content.decode('utf-8-sig')
+                except UnicodeDecodeError:
+                    decoded_content = raw_content.decode('latin-1')
+                
+                content_lines = decoded_content.splitlines()
+                import_file.seek(0)
+                
+                reader = csv.reader(content_lines)
+                rows = list(reader)
+                
+                if rows:
+                    max_cols = max(len(row) for row in rows)
+                else:
+                    max_cols = 0
+                
+                print(f"DEBUG: Analiza structurala - Randuri: {len(rows)}, Max Coloane: {max_cols}", flush=True)
+
+                output = io.StringIO()
+                writer = csv.writer(output)
+                fixed_count = 0
+                for row in rows:
+                    if len(row) < max_cols:
+                        fixed_count += 1
+                        row.extend([""] * (max_cols - len(row)))
+                    writer.writerow(row)
+                
+                if fixed_count > 0:
+                    print(f"DEBUG: Am reparat {fixed_count} randuri asimetrice.", flush=True)
+                    new_content = output.getvalue().encode('utf-8')
+                    request.FILES['import_file'].file = io.BytesIO(new_content)
+                    request.FILES['import_file'].size = len(new_content)
+                else:
+                    print("DEBUG: Fisierul este deja simetric.", flush=True)
+
+            except Exception as e:
+                print(f"DEBUG: Eroare la pre-procesarea fisierului: {str(e)}", flush=True)
+            
+            print("!"*20 + " [DEBUG ADMIN] END IMPORT_ACTION " + "!"*20 + "\n", flush=True)
+
+        return super().import_action(request, *args, **kwargs)
+
     def get_import_data_kwargs(self, request, *args, **kwargs):
+        print("DEBUG ADMIN: get_import_data_kwargs incepe", flush=True)
         kw = super().get_import_data_kwargs(request, *args, **kwargs)
         form = kwargs.get('form')
         if form and hasattr(form, 'cleaned_data'):
-            # During initial import (ImportForm)
             import_file = form.cleaned_data.get('import_file')
             if import_file:
                 kw['import_filename'] = import_file.name
+                print(f"DEBUG ADMIN: Filename setat: {import_file.name}", flush=True)
             else:
-                # During confirm step (ConfirmImportForm)
                 original_file_name = form.cleaned_data.get('original_file_name', '')
                 if original_file_name:
                     kw['import_filename'] = original_file_name
+                    print(f"DEBUG ADMIN: Original filename recuperat: {original_file_name}", flush=True)
         return kw
 
     formfield_overrides = {
