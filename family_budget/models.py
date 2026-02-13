@@ -54,6 +54,7 @@ class Account(models.Model):
     alias = models.CharField(max_length=100, blank=True, null=True)
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, related_name='accounts')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='accounts')
+    initial_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def clean(self):
         if self.iban_account:
@@ -67,7 +68,7 @@ class Account(models.Model):
         return f"{self.alias or self.bank} - {self.iban_account} ({self.currency.code})"
 
 
-class Transaction(models.Model):
+class AccountTransaction(models.Model):
     bank_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_transactions')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, null=True, blank=True)

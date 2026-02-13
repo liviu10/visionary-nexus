@@ -1,11 +1,14 @@
 from django.contrib import admin
 from django.db.models import Sum
+from django.db import models
+from django.forms import Textarea
 from import_export.admin import ImportExportModelAdmin
-from .models import Category, Subcategory, Account, Transaction, AmortizationSchedule, Currency
+from .models import Category, Subcategory, Account, AccountTransaction, AmortizationSchedule, Currency
 from .resources import (
     CurrencyResource, CategoryResource, 
-    SubcategoryResource, AccountResource, AmortizationScheduleResource, TransactionResource
+    SubcategoryResource, AccountResource, AmortizationScheduleResource, AccountTransactionResource
 )
+from .formats import INGPDF
 
 
 class UserImportMixin:
@@ -45,20 +48,28 @@ class SubcategoryAdmin(UserImportMixin, ImportExportModelAdmin):
     list_select_related = ('category',)
 
 
-class TransactionInline(admin.TabularInline):
-    model = Transaction
+class AccountTransactionInline(admin.TabularInline):
+    model = AccountTransaction
     extra = 0
-    fields = ('transaction_date', 'transaction_details', 'debit', 'credit', 'category', 'subcategory')
-    readonly_fields = ('transaction_date', 'transaction_details', 'debit', 'credit')
+    fields = ('category', 'subcategory', 'get_date_formatted', 'transaction_details', 'debit', 'credit')
+    readonly_fields = ('get_date_formatted', 'transaction_details', 'debit', 'credit')
     show_change_link = True
     can_delete = False
     ordering = ('-transaction_date',)
+    
+    @admin.display(description='Inregistrat')
+    def get_date_formatted(self, obj):
+        return obj.transaction_date.strftime("%d.%m.%Y")
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('category', 'subcategory').order_by('-transaction_date')
 
 
 @admin.register(Account)
 class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
     resource_classes = [AccountResource]
-    inlines = [TransactionInline]
+    inlines = [AccountTransactionInline]
     list_display = ('alias', 'bank', 'iban_account', 'currency', 'get_balance', 'user')
     list_filter = ('bank', 'user', 'currency')
     search_fields = ('bank', 'iban_account', 'alias')
@@ -69,15 +80,19 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
         stats = obj.account_transactions.aggregate(
             d=Sum('debit'), c=Sum('credit')
         )
-        balance = (stats['c'] or 0) - (stats['d'] or 0)
+        balance = (obj.initial_balance or 0) + (stats['c'] or 0) - (stats['d'] or 0)
         return f"{balance:,.2f} {obj.currency.code}"
 
 
-@admin.register(Transaction)
-class TransactionAdmin(ImportExportModelAdmin):
-    resource_classes = [TransactionResource]
+@admin.register(AccountTransaction)
+class AccountTransactionAdmin(ImportExportModelAdmin):
+    resource_classes = [AccountTransactionResource]
+    formats = [INGPDF]
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 4, 'cols': 40})},
+        models.CharField: {'widget': Textarea(attrs={'rows': 3, 'cols': 40})},
+    }
     list_display = (
-        'transaction_date', 'bank_account', 'category', 
         'transaction_date', 'bank_account', 'category', 
         'subcategory', 'get_amount', 'transaction_details'
     )
