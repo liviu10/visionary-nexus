@@ -3,19 +3,16 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django_ckeditor_5.fields import CKEditor5Field
 
+
 class Category(models.TextChoices):
     BOOK = 'BOOK', 'Book'
     GAME = 'GAME', 'Game'
     MOVIE = 'MOVIE', 'Movie'
 
+
 class Type(models.Model):
     name = models.CharField(max_length=255)
-    category = models.CharField(
-        max_length=10, 
-        choices=Category.choices, 
-        default=Category.BOOK,
-        help_text="Select the model this type belongs to"
-    )
+    category = models.CharField(max_length=10, choices=Category.choices, default=Category.BOOK, help_text="Select the model this type belongs to")
 
     class Meta:
         ordering = ('id',)
@@ -31,11 +28,7 @@ class Type(models.Model):
 
 class Genre(models.Model):
     name = models.CharField(max_length=255)
-    category = models.CharField(
-        max_length=10, 
-        choices=Category.choices, 
-        default=Category.BOOK
-    )
+    category = models.CharField(max_length=10, choices=Category.choices, default=Category.BOOK, help_text="Select the model this genre belongs to")
 
     class Meta:
         ordering = ('id',)
@@ -51,11 +44,7 @@ class Genre(models.Model):
 
 class Status(models.Model):
     name = models.CharField(max_length=255)
-    category = models.CharField(
-        max_length=10, 
-        choices=Category.choices, 
-        default=Category.BOOK
-    )
+    category = models.CharField(max_length=10, choices=Category.choices, default=Category.BOOK, help_text="Select the model this status belongs to")
 
     class Meta:
         ordering = ('id',)
