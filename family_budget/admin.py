@@ -11,6 +11,7 @@ from django.shortcuts import render
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from django.core.paginator import Paginator
+from django.urls import reverse
 
 from .models import (
     Account,
@@ -168,6 +169,9 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
 
         queryset = obj.account_transactions.all().select_related('category', 'subcategory').order_by('-transaction_date')
         
+        app_label = queryset.model._meta.app_label
+        model_name = queryset.model._meta.model_name
+
         html = """
         <style>
             .field-display_transactions_table { display: block !important; }
@@ -181,6 +185,8 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
             .tx-table th { padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; color: #fff; cursor: pointer; position: relative; }
             .tx-table th:after { content: ' ↕'; opacity: 0.3; }
             .tx-table td { padding: 10px; border-bottom: 1px solid #eee; }
+            .tx-row { cursor: pointer; transition: background 0.2s; }
+            .tx-row:hover { background: #fff !important; color: #000; }
             .tx-table tr.hidden { display: none !important; }
             .amt { font-family: monospace; font-weight: bold; text-align: center; }
             .debit { color: #dc3545; }
@@ -213,9 +219,10 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
         for tx in queryset:
             sub = f'<span class="badge-sub">{tx.subcategory}</span>' if tx.subcategory else ""
             cat_text = f'{tx.category or "-"}{sub}'
+            url = reverse(f'admin:{app_label}_{model_name}_change', args=[tx.pk])
             
             html += f"""
-                <tr class="tx-row">
+                <tr class="tx-row" onclick="window.location='{url}';">
                     <td data-value="{tx.transaction_date.isoformat()}">{tx.transaction_date.strftime('%d.%m.%Y')}</td>
                     <td>{tx.transaction_details}</td>
                     <td>{cat_text}</td>
@@ -223,9 +230,6 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
                     <td class="amt credit" data-value="{tx.credit}">{"+" + f"{tx.credit:,.2f}" if tx.credit > 0 else ""}</td>
                 </tr>
             """
-
-        if not queryset.exists():
-            html += "<tr><td colspan='5' style='text-align:center; padding:20px;'>There are no transactions.</td></tr>"
 
         html += """
                 </tbody>
@@ -283,7 +287,7 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
                 tbody.dataset.sortDir = isAsc ? 'desc' : 'asc';
                 
                 rows.forEach(row => tbody.appendChild(row));
-                filterTxTable(); // Re-aplică vizibilitatea paginii după sortare
+                filterTxTable(); 
             }
 
             function updateTxDisplay() {
@@ -329,8 +333,7 @@ class AccountTransactionAdmin(ImportExportModelAdmin):
         lines = decoded_content.splitlines()
         reader = list(csv.reader(lines))
         
-        if not reader:
-            return None
+        if not reader: return None
 
         max_cols = max(len(row) for row in reader)
         
@@ -396,28 +399,5 @@ class AccountTransactionAdmin(ImportExportModelAdmin):
         }),
         ('Amounts', {
             'fields': ('debit', 'credit')
-        }),
-    )
-
-
-@admin.register(AmortizationSchedule)
-class AmortizationScheduleAdmin(UserImportMixin, ImportExportModelAdmin):
-    resource_classes = [AmortizationScheduleResource]
-    list_display = (
-        'next_payment_date', 'payment_amount', 'interest', 
-        'capital_rate', 'capital_due_end_period', 'group_life_insurance_premium'
-    )
-    list_filter = ('next_payment_date',)
-    search_fields = ('next_payment_date',)
-    ordering = ('next_payment_date',)
-    fieldsets = (
-        ('Schedule Detail', {
-            'fields': ('next_payment_date', 'payment_amount')
-        }),
-        ('Financial Detail', {
-            'fields': ('interest', 'capital_rate', 'capital_due_end_period')
-        }),
-        ('Others', {
-            'fields': ('group_life_insurance_premium',)
         }),
     )
