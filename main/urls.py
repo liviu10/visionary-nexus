@@ -32,4 +32,5 @@ urlpatterns = [
     path('', redirect_to_admin),
     path('admin/', admin.site.urls),
     path("ckeditor5/", include('django_ckeditor_5.urls'), name="ck_editor_5_upload_file"),
+    path('finance/', include('family_budget.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

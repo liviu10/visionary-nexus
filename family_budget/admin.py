@@ -114,11 +114,19 @@ class CategoryAdmin(UserImportMixin, admin.ModelAdmin):
     ordering = ('id', 'name',)
 
 
+@admin.register(Subcategory)
+class SubcategoryAdmin(admin.ModelAdmin):
+    search_fields = ('name',)
+
+    def has_module_permission(self, request):
+        return False
+
+
 @admin.register(Account)
 class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
     resource_classes = [AccountResource]
     autocomplete_fields = ('currency',)
-    list_display = ('alias', 'bank', 'iban_account', 'currency', 'get_balance',)
+    list_display = ('alias', 'bank', 'iban_account', 'currency', 'get_balance', 'graph_button_field')
     list_per_page = 20
     list_filter = ('bank', 'currency',)
     search_fields = ('bank', 'iban_account', 'alias',)
@@ -129,36 +137,29 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
         models.DecimalField: {'widget': NumberInput(attrs={'style': 'width: 100%; max-width: 100%;'})},
     }
 
-    readonly_fields = ('get_balance', 'display_transactions_table',)
+    readonly_fields = ('get_balance', 'display_transactions_table', 'graph_button_field')
 
     fieldsets = (
         ('General Information', {
-            'fields': ('bank', 'iban_account', 'alias', 'currency', 'initial_balance', 'get_balance')
+            'fields': ('bank', 'iban_account', 'alias', 'currency', 'initial_balance', 'get_balance', 'graph_button_field')
         }),
         ('Transaction History', {
             'fields': ('display_transactions_table',),
         }),
     )
 
-    @admin.display(description='Current Balance')
-    def get_balance(self, obj):
-        stats = obj.account_transactions.aggregate(
-            d=Sum('debit'), c=Sum('credit')
-        )
-        balance = (obj.initial_balance or 0) + (stats['c'] or 0) - (stats['d'] or 0)
-        return f"{balance:,.2f} {obj.currency.code}"
+    @admin.display(description='Actions')
+    def graph_button_field(self, obj):
+        if not obj.pk:
+            return "-"
+        url = reverse('account_chart_view', args=[obj.pk])
+        return mark_safe(f'<a href="{url}" class="button" style="background: #417690; color: white !important; padding: 5px 15px; vertical-align: middle;">📊 Chart</a>')
 
     @admin.display(description='Current Balance')
     def get_balance(self, obj):
         stats = obj.account_transactions.aggregate(
             d=Sum('debit'), c=Sum('credit')
         )
-        balance = (obj.initial_balance or 0) + (stats['c'] or 0) - (stats['d'] or 0)
-        return f"{balance:,.2f} {obj.currency.code}"
-
-    @admin.display(description='Current Balance')
-    def get_balance(self, obj):
-        stats = obj.account_transactions.aggregate(d=Sum('debit'), c=Sum('credit'))
         balance = (obj.initial_balance or 0) + (stats['c'] or 0) - (stats['d'] or 0)
         return f"{balance:,.2f} {obj.currency.code}"
 
@@ -168,38 +169,40 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
             return mark_safe('<p style="padding:10px; color:#000;">Save the account to view transaction history.</p>')
 
         queryset = obj.account_transactions.all().select_related('category', 'subcategory').order_by('-transaction_date')
-        
         app_label = queryset.model._meta.app_label
         model_name = queryset.model._meta.model_name
+        graph_url = reverse('account_chart_view', args=[obj.pk])
 
-        html = """
+        html = f"""
         <style>
-            .field-display_transactions_table { display: block !important; }
-            .field-display_transactions_table > div { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            .field-display_transactions_table .control-label, .field-display_transactions_table label, .field-display_transactions_table .flex-container::before { display: none !important; }
-            .field-display_transactions_table .readonly { width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; display: block !important; }
-            .tx-tools { display: flex; justify-content: flex-end; padding: 10px; border: 1px solid #ccc; border-bottom: none; border-radius: 4px 4px 0 0; }
-            .tx-tools input { padding: 6px; width: 250px; border: 1px solid #ccc; border-radius: 3px; }
-            .tx-wrapper { margin-bottom: 20px; border: 1px solid #ccc; border-radius: 0 0 4px 4px; }
-            .tx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-            .tx-table th { padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; color: #fff; cursor: pointer; position: relative; }
-            .tx-table th:after { content: ' ↕'; opacity: 0.3; }
-            .tx-table td { padding: 10px; border-bottom: 1px solid #eee; }
-            .tx-row { cursor: pointer; transition: background 0.2s; }
-            .tx-row:hover { background: #fff !important; color: #000; }
-            .tx-table tr.hidden { display: none !important; }
-            .amt { font-family: monospace; font-weight: bold; text-align: center; }
-            .debit { color: #dc3545; }
-            .credit { color: #198754; }
-            .badge-sub { background: #e0e0e0; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 5px; color: #333; }
-            .tx-nav { padding: 15px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-            .tx-nav button { background: #79aec8; color: #000 !important; padding: 6px 14px; border-radius: 3px; border: 1px solid #5b8092; cursor: pointer; font-weight: bold; }
-            .tx-nav button:disabled { background: #ccc; border-color: #999; cursor: not-allowed; }
-            .current-page { font-weight: bold; color: #000; background: #fff; padding: 5px 10px; border: 1px solid #ccc; border-radius: 3px; }
+            .field-display_transactions_table {{ display: block !important; }}
+            .field-display_transactions_table > div {{ display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }}
+            .field-display_transactions_table .control-label, .field-display_transactions_table label, .field-display_transactions_table .flex-container::before {{ display: none !important; }}
+            .field-display_transactions_table .readonly {{ width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; display: block !important; }}
+            .tx-tools {{ display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #ccc; border-bottom: none; border-radius: 4px 4px 0 0; }}
+            .tx-tools input {{ padding: 6px; width: 250px; border: 1px solid #ccc; border-radius: 3px; }}
+            .btn-graph-inline {{ background: #79aec8; color: #000 !important; padding: 6px 12px; border-radius: 3px; text-decoration: none; font-weight: bold; font-size: 12px; }}
+            .tx-wrapper {{ margin-bottom: 20px; border: 1px solid #ccc; border-radius: 0 0 4px 4px; }}
+            .tx-table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
+            .tx-table th {{ padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; color: #fff; cursor: pointer; position: relative; background: #417690; }}
+            .tx-table th:after {{ content: ' ↕'; opacity: 0.3; }}
+            .tx-table td {{ padding: 10px; border-bottom: 1px solid #eee; }}
+            .tx-row {{ cursor: pointer; transition: background 0.2s; }}
+            .tx-row:hover {{ background: #fff !important; color: #000; }}
+            .tx-table tr.hidden {{ display: none !important; }}
+            .amt {{ font-family: monospace; font-weight: bold; text-align: center; }}
+            .debit {{ color: #dc3545; }}
+            .credit {{ color: #198754; }}
+            .badge-sub {{ background: #e0e0e0; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 5px; color: #333; }}
+            .tx-nav {{ padding: 15px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; background: #f8f8f8; }}
+            .tx-nav button {{ background: #79aec8; color: #000 !important; padding: 6px 14px; border-radius: 3px; border: 1px solid #5b8092; cursor: pointer; font-weight: bold; }}
+            .tx-nav button:disabled {{ background: #ccc; border-color: #999; cursor: not-allowed; }}
+            .current-page {{ font-weight: bold; color: #000; background: #fff; padding: 5px 10px; border: 1px solid #ccc; border-radius: 3px; }}
         </style>
 
         <div class="tx-tools">
             <input type="text" id="tx-search" placeholder="Search transactions..." onkeyup="filterTxTable()">
+            <a href="{graph_url}" class="btn-graph-inline">📊 View Evolution Chart</a>
         </div>
         
         <div class="tx-wrapper">
@@ -235,7 +238,7 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
                 </tbody>
             </table>
             <div class="tx-nav">
-                <div id="tx-counter" style="color: #fff; font-size: 12px;"></div>
+                <div id="tx-counter" style="color: #000; font-size: 12px;"></div>
                 <div>
                     <button type="button" id="tx-prev" onclick="changeTxPage(-1)">&laquo; Previous</button>
                     <span class="current-page" id="tx-info"></span>
@@ -313,7 +316,9 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
             }
 
             document.addEventListener('DOMContentLoaded', initTxTable);
-            initTxTable();
+            if (document.readyState === "complete" || document.readyState === "interactive") {
+                initTxTable();
+            }
         </script>
         """
         return mark_safe(html)
@@ -322,6 +327,7 @@ class AccountAdmin(UserImportMixin, ImportExportModelAdmin):
 @admin.register(AccountTransaction)
 class AccountTransactionAdmin(ImportExportModelAdmin):
     resource_classes = [AccountTransactionResource]
+    autocomplete_fields = ('bank_account', 'category', 'subcategory')
 
     def _get_cleaned_csv_file(self, import_file):
         raw_content = import_file.read()
@@ -388,6 +394,7 @@ class AccountTransactionAdmin(ImportExportModelAdmin):
         'subcategory', 'get_amount', 'transaction_details'
     )
     list_filter = ('transaction_date', 'category', 'bank_account', 'subcategory')
+    list_per_page = 20
     search_fields = ('transaction_details',)
     list_select_related = ('bank_account', 'category', 'subcategory', 'bank_account__currency')
     fieldsets = (

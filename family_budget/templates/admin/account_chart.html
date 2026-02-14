@@ -1,0 +1,208 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div style="width: 94%; margin: 20px auto; font-family: 'Segoe UI', Roboto, sans-serif; color: #000;">
+
+    <div
+        style="background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); margin-bottom: 30px; border: 1px solid #ddd;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 3px solid #417690; padding-bottom: 20px;">
+            <h2 style="margin: 0; font-size: 28px; font-weight: 800; color: #1e3d4d;">
+                Financial Analysis: {{ account.alias|default:account.iban_account }}
+            </h2>
+            <div id="chart-filters" style="display: flex; gap: 10px;">
+                <button type="button" class="button filter-btn" onclick="filterAllData(0, this)"
+                    style="background: #417690; color: #fff !important; font-weight: bold; border: 2px solid #1e3d4d; padding: 10px 20px; cursor: pointer; border-radius: 6px;">All
+                    Time</button>
+                <button type="button" class="button filter-btn" id="default-filter" onclick="filterAllData(30, this)"
+                    style="background: #417690; color: #fff !important; font-weight: bold; border: 2px solid #1e3d4d; padding: 10px 20px; cursor: pointer; border-radius: 6px;">Last
+                    30 Days</button>
+                <button type="button" class="button filter-btn" onclick="filterAllData(180, this)"
+                    style="background: #417690; color: #fff !important; font-weight: bold; border: 2px solid #1e3d4d; padding: 10px 20px; cursor: pointer; border-radius: 6px;">Last
+                    6 Months</button>
+                <button type="button" class="button filter-btn" onclick="filterAllData(365, this)"
+                    style="background: #417690; color: #fff !important; font-weight: bold; border: 2px solid #1e3d4d; padding: 10px 20px; cursor: pointer; border-radius: 6px;">Last
+                    Year</button>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+            <div style="height: 450px; background: #fafafa; padding: 15px; border-radius: 8px;">
+                <canvas id="balanceChart"></canvas>
+            </div>
+            <div style="height: 450px; background: #fafafa; padding: 15px; border-radius: 8px;">
+                <canvas id="comparisonChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+        <div
+            style="background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); border: 1px solid #ddd;">
+            <h3
+                style="text-align: center; margin-top: 0; font-size: 20px; font-weight: 800; color: #1e3d4d; border-bottom: 2px solid #eee; padding-bottom: 15px;">
+                Expenses by Category</h3>
+            <div style="height: 400px; padding-top: 20px;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <div
+            style="background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); border: 1px solid #ddd;">
+            <h3
+                style="text-align: center; margin-top: 0; font-size: 20px; font-weight: 800; color: #1e3d4d; border-bottom: 2px solid #eee; padding-bottom: 15px;">
+                Expenses by Subcategory</h3>
+            <div style="height: 400px; padding-top: 20px;">
+                <canvas id="subcategoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; padding-bottom: 40px;">
+        <a href="javascript:history.back()" class="button"
+            style="background: #333; color: #fff !important; font-weight: 800; padding: 15px 35px; text-decoration: none; border-radius: 6px; font-size: 16px; border: 2px solid #000;">&laquo;
+            Back to Account Admin</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const rawData = {{ raw_data_json| safe }};
+    const colors = ['#003f5c', '#2f4b7c', '#665191', '#a05195', '#d45087', '#f95d6a', '#ff7c43', '#ffa600', '#2a9d8f', '#e76f51'];
+
+    let balanceChart, categoryChart, subcategoryChart, comparisonChart;
+
+    function filterAllData(days, btn) {
+        const buttons = document.querySelectorAll('.filter-btn');
+        buttons.forEach(b => {
+            b.style.background = '#417690';
+            b.style.transform = 'scale(1)';
+        });
+        if (btn) {
+            btn.style.background = '#1e3d4d';
+            btn.style.transform = 'scale(1.05)';
+        }
+
+        let filtered = [];
+        if (days === 0) {
+            filtered = rawData;
+        } else {
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - days);
+            filtered = rawData.filter(d => d.date === 'Start' || new Date(d.iso_date) >= cutoff);
+        }
+
+        updateBalanceChart(filtered);
+        updateDistributionCharts(filtered);
+        updateComparisonChart(filtered);
+    }
+
+    function updateBalanceChart(data) {
+        const ctx = document.getElementById('balanceChart').getContext('2d');
+        if (balanceChart) balanceChart.destroy();
+        balanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [{
+                    label: 'Evolution',
+                    data: data.map(d => d.balance),
+                    borderColor: '#1e3d4d',
+                    backgroundColor: 'rgba(30, 61, 77, 0.2)',
+                    fill: true,
+                    tension: 0.15,
+                    borderWidth: 4,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#000', font: { weight: 'bold' } } } },
+                scales: {
+                    y: { ticks: { color: '#000', font: { weight: '800' } } },
+                    x: { ticks: { color: '#000', font: { weight: '800' } } }
+                }
+            }
+        });
+    }
+
+    function updateComparisonChart(data) {
+        let totalDebit = 0;
+        let totalCredit = 0;
+        data.forEach(d => {
+            totalDebit += d.debit;
+            totalCredit += d.credit;
+        });
+
+        const ctx = document.getElementById('comparisonChart').getContext('2d');
+        if (comparisonChart) comparisonChart.destroy();
+        comparisonChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Expenses', 'Income'],
+                datasets: [{
+                    data: [totalDebit, totalCredit],
+                    backgroundColor: ['#bc4749', '#3a5a40'],
+                    borderWidth: 2,
+                    borderColor: '#000'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => ` ${ctx.raw.toLocaleString()} {{ account.currency.code }}` } }
+                },
+                scales: {
+                    y: { ticks: { color: '#000', font: { weight: '800' } } },
+                    x: { ticks: { color: '#000', font: { weight: '800' } } }
+                }
+            }
+        });
+    }
+
+    function updateDistributionCharts(data) {
+        const cats = {};
+        const subs = {};
+        data.forEach(d => {
+            if (d.debit > 0) {
+                cats[d.category] = (cats[d.category] || 0) + d.debit;
+                subs[d.subcategory] = (subs[d.subcategory] || 0) + d.debit;
+            }
+        });
+
+        const common = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: '#000', font: { weight: 'bold' } } } }
+        };
+
+        const catCtx = document.getElementById('categoryChart').getContext('2d');
+        if (categoryChart) categoryChart.destroy();
+        categoryChart = new Chart(catCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(cats),
+                datasets: [{ data: Object.values(cats), backgroundColor: colors }]
+            },
+            options: common
+        });
+
+        const subCtx = document.getElementById('subcategoryChart').getContext('2d');
+        if (subcategoryChart) subcategoryChart.destroy();
+        subcategoryChart = new Chart(subCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(subs),
+                datasets: [{ data: Object.values(subs), backgroundColor: colors }]
+            },
+            options: common
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        filterAllData(30, document.getElementById('default-filter'));
+    });
+</script>
+{% endblock %}

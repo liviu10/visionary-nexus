@@ -23,7 +23,6 @@ class Category(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='categories')
     
     class Meta:
-        ordering = ('name',)
         verbose_name = "Category"
         verbose_name_plural = "Categories"
 
@@ -36,7 +35,6 @@ class Subcategory(models.Model):
     name = models.CharField(max_length=100)
 
     class Meta:
-        ordering = ('category', 'name')
         verbose_name = "Subcategory"
         verbose_name_plural = "Subcategories"
         constraints = [
@@ -94,7 +92,7 @@ class AccountTransaction(models.Model):
         if self.category and self.subcategory:
             if self.subcategory.category != self.category:
                 raise ValidationError({
-                    'subcategory': f"Subcategoria '{self.subcategory.name}' nu aparține de '{self.category.name}'."
+                    'subcategory': f"Subcategory '{self.subcategory.name}' does not belong to '{self.category.name}'."
                 })
 
     def save(self, *args, **kwargs):
