@@ -1,4 +1,5 @@
 # visionary-nexus_web_1
+Username = root
 podman-compose exec web python manage.py shell
 from django.contrib.auth.models import User
 print(User.objects.values_list('username', flat=True))
