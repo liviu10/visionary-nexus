@@ -12,13 +12,14 @@ services:
     # Environment variables for the Django application
     environment:
       - DEBUG=1
-      - SECRET_KEY=your_secret_key_here
+      - SECRET_KEY=django-insecure-6suv50cg&y26=*1zb1j_o$g4p7+5!=_tn#55@57%vi1&7!%^rd
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     
     # Mapping host port 9000 to container port 9000
     ports:
-      - "9000:9000"
+      - "8001:9000"
     
-    # Command to run the Django development server on the specified port
-    command: ["python", "manage.py", "runserver", "0.0.0.0:9000"]
+    # Command to run when the container starts
+    # This will run migrations and then start the Django development server
+    command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:9000"]

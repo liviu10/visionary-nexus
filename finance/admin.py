@@ -46,41 +46,15 @@ class UserImportMixin:
 
 
 @admin.register(Currency)
-class CurrencyAdmin(UserImportMixin, admin.ModelAdmin):
-    def get_actions(self, request):
-        actions = super().get_queryset(request)
-        actions = super().get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
-        return actions
-
-    def has_add_permission(self, request): return False
-
-    def has_change_permission(self, request, obj=None): return False
-    
-    def has_delete_permission(self, request, obj=None): return False
-
+class CurrencyAdmin(UserImportMixin, ImportExportModelAdmin):
     resource_classes = [CurrencyResource]
     list_display = ('id', 'code', 'currency', 'country',)
-    list_display_links = None
-    list_per_page = 20
     search_fields = ('code', 'currency', 'country',)
     ordering = ('id',)
 
 
 @admin.register(Category)
-class CategoryAdmin(UserImportMixin, admin.ModelAdmin):
-    def get_actions(self, request):
-        actions = super().get_queryset(request)
-        actions = super().get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
-        return actions
-
-    def has_add_permission(self, request): return False
-
-    def has_delete_permission(self, request, obj=None): return False
-
+class CategoryAdmin(UserImportMixin, ImportExportModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related('subcategories')
 
@@ -115,11 +89,12 @@ class CategoryAdmin(UserImportMixin, admin.ModelAdmin):
 
 
 @admin.register(Subcategory)
-class SubcategoryAdmin(admin.ModelAdmin):
-    search_fields = ('name',)
-
-    def has_module_permission(self, request):
-        return False
+class SubcategoryAdmin(ImportExportModelAdmin):
+    resource_classes = [SubcategoryResource]
+    list_display = ('id', 'name', 'category',)
+    list_filter = ('category',)
+    search_fields = ('name', 'category__name')
+    ordering = ('category', 'name',)
 
 
 @admin.register(Account)

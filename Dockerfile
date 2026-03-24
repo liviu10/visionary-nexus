@@ -1,25 +1,31 @@
-# Use the official Python 3.14.2 image
-FROM python:3.14.2
+# Utilizăm o versiune stabilă de Python (3.12-slim)
+# Versiunea 'slim' este mult mai mică, iar 3.12 are deja pachete pre-compilate (wheels) 
+# pentru NumPy și Scikit-learn, deci nu mai trebuie să le compileze de la zero.
+FROM python:3.12-slim-bookworm
 
-# Set environment variables
-# PYTHONUNBUFFERED: Ensures that python output is sent straight to terminal (useful for logs)
-# PYTHONDONTWRITEBYTECODE: Prevents Python from writing .pyc files to disk
+# Instalăm dependențele de sistem necesare pentru pachetele de date
+# libpq-dev ar fi pentru Postgres, în caz că treci de la SQLite
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Setăm variabilele de mediu
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container
+# Copiem doar fișierul de cerințe pentru a profita de cache-ul Docker
 COPY requirements.txt /app/
 
-# Install dependencies
-# Using the full image ensures build tools like gcc are available if needed
+# Instalăm dependențele
+# Folosim --prefer-binary pentru a forța utilizarea versiunilor deja compilate
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir --prefer-binary -r requirements.txt
 
-# Copy the rest of the application code
+# Copiem restul codului
 COPY . /app/
 
-# Set the default command to run your script
-CMD ["python", "main.py"]
+# Comanda de start
+CMD ["python", "manage.py", "runserver", "0.0.0.0:9000"]

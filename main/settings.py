@@ -42,14 +42,16 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'import_export',
     'django_ckeditor_5',
+    'admin_reorder',
 
     # Applications
-    'family_budget',
+    'finance',
     'library',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'admin_reorder.middleware.ModelAdminReorder',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -184,3 +186,33 @@ CKEDITOR_5_CONFIGS = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Admin Reorder Configuration
+ADMIN_REORDER = (
+    # Personalizăm secțiunea Finance
+    {
+        'app': 'finance',
+        'label': 'Finance',
+        'models': (
+            'finance.Category',
+            'finance.Subcategory',
+            'finance.Currency',
+            'finance.Account',
+            'finance.AccountTransaction',
+        )
+    },
+    # Secțiunea Library
+    {
+        'app': 'library',
+        'models': (
+            'library.Book',
+            'library.Game',
+            'library.Movie',
+            'library.Genre',
+            'library.Type',
+            'library.Status',
+            'library.Language',
+        )
+    },
+    # Secțiuni de sistem
+    {'app': 'auth', 'models': ('auth.User', 'auth.Group')},
+)
